@@ -66,13 +66,12 @@ describe('CoreEditor', () => {
     window.getSelection()?.addRange(range);
 
     editor.setStyle('font-size', '20px');
-    
     const html = editor.getHTML();
-    expect(html).toContain('<span style="font-size: 20px; line-height: 1.2;">Size</span>');
+    expect(html).toContain('<span style="font-size: 20px;">Size</span>');
   });
 
   it('should handle font size update on existing span', () => {
-    editor.setHTML('<p>Test <span style="font-size: 10px; line-height: 1.2;">Size</span></p>');
+    editor.setHTML('<p>Test <span style="font-size: 10px;">Size</span></p>');
     
     // Select "Size" inside the span
     const span = editor.el.querySelector('span')!;
@@ -85,7 +84,7 @@ describe('CoreEditor', () => {
     
     const html = editor.getHTML();
     // It should update the existing span instead of nesting
-    expect(html).toContain('<span style="font-size: 30px; line-height: 1.2;">Size</span>');
+    expect(html).toContain('<span style="font-size: 30px;">Size</span>');
     expect((html.match(/<span/g) || []).length).toBe(1);
   });
 
@@ -100,12 +99,12 @@ describe('CoreEditor', () => {
     
     // First update: 20px
     const range1 = editor.setStyle('font-size', '20px', range);
-    expect(editor.getHTML()).toContain('<span style="font-size: 20px; line-height: 1.2;">Incremental</span>');
+    expect(editor.getHTML()).toContain('<span style="font-size: 20px;">Incremental</span>');
     expect(range1).not.toBeNull();
 
     // Second update: 24px (using the new range)
     editor.setStyle('font-size', '24px', range1!);
-    expect(editor.getHTML()).toContain('<span style="font-size: 24px; line-height: 1.2;">Incremental</span>');
+    expect(editor.getHTML()).toContain('<span style="font-size: 24px;">Incremental</span>');
     // Should still only be one span
     expect((editor.getHTML().match(/<span/g) || []).length).toBe(1);
   });

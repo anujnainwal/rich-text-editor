@@ -74,6 +74,41 @@ export class Toolbar {
         }
         return;
       }
+      if (item.command === 'insertImage') {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+
+        fileInput.addEventListener('change', (event) => {
+          const target = event.target as HTMLInputElement;
+          const file = target.files?.[0];
+          
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const url = e.target?.result as string;
+              this.editor.insertImage(url);
+            };
+            reader.readAsDataURL(file);
+          }
+          
+          // Cleanup
+          document.body.removeChild(fileInput);
+        });
+
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        
+        // Commented out URL prompt logic:
+        /*
+        const url = window.prompt('Enter the Image URL');
+        if (url) {
+          this.editor.insertImage(url);
+        }
+        */
+        return;
+      }
 
       if (item.command) {
         this.editor.execute(item.command, item.value || null);
@@ -158,6 +193,8 @@ export class Toolbar {
         this.editor.execute(item.command, value);
       } else if (item.command === 'fontFamily') {
         this.editor.setStyle('font-family', value);
+      } else if (item.command === 'lineHeight') {
+        this.editor.setStyle('line-height', value);
       }
       this.editor.focus();
     });
@@ -170,14 +207,42 @@ export class Toolbar {
   }
 
   private renderColorPicker(item: ToolbarItem): void {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('te-color-picker-wrapper');
+    wrapper.title = item.title;
+
+    if (item.icon) {
+      const iconBtn = document.createElement('div');
+      iconBtn.classList.add('te-button', 'te-color-icon');
+      iconBtn.innerHTML = item.icon;
+
+      const indicator = document.createElement('div');
+      indicator.classList.add('te-color-indicator');
+      indicator.style.backgroundColor = item.value || '#000000';
+      iconBtn.appendChild(indicator);
+      
+      wrapper.appendChild(iconBtn);
+    }
+
     const input = document.createElement('input');
     input.type = 'color';
-    input.classList.add('te-color-picker');
-    input.title = item.title;
+    input.classList.add('te-color-picker-input');
+    // If there is no icon, fallback to default generic look
+    if (!item.icon) {
+      input.classList.add('te-color-picker');
+      input.title = item.title;
+    }
     input.value = item.value || '#000000';
 
     input.addEventListener('mousedown', () => {
       this.savedRange = this.editor.selection.saveSelection();
+    });
+
+    input.addEventListener('input', () => {
+      if (item.icon) {
+        const indicator = wrapper.querySelector('.te-color-indicator') as HTMLElement;
+        if (indicator) indicator.style.backgroundColor = input.value;
+      }
     });
 
     input.addEventListener('change', () => {
@@ -190,7 +255,8 @@ export class Toolbar {
       this.editor.focus();
     });
 
-    this.container.appendChild(input);
+    wrapper.appendChild(input);
+    this.container.appendChild(item.icon ? wrapper : input);
   }
 
   public get el(): HTMLElement {

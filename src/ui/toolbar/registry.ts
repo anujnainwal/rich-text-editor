@@ -4,6 +4,7 @@ import { redo } from './items/Redo';
 import { heading } from './items/Heading';
 import { fontFamily } from './items/FontFamily';
 import { fontSize } from './items/FontSize';
+import { lineHeight } from './items/LineHeight';
 import { bold } from './items/Bold';
 import { italic } from './items/Italic';
 import { underline } from './items/Underline';
@@ -22,6 +23,7 @@ import { horizontalRule } from './items/HorizontalRule';
 import { clearFormatting } from './items/ClearFormatting';
 import { emoji } from './items/Emoji';
 import { link } from './items/Link';
+import { image } from './items/Image';
 
 const divider: ToolbarItem = { type: 'divider', title: '' };
 
@@ -32,6 +34,7 @@ export const toolbarItems: ToolbarItem[] = [
   heading,
   fontFamily,
   fontSize,
+  lineHeight,
   divider,
   bold,
   italic,
@@ -54,5 +57,6 @@ export const toolbarItems: ToolbarItem[] = [
   horizontalRule,
   emoji,
   link,
+  image,
   clearFormatting
 ];

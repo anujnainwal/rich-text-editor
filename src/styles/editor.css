@@ -131,6 +131,50 @@
   border-color: var(--te-border-focus);
 }
 
+.te-color-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--te-radius-sm);
+  transition: var(--te-transition);
+}
+
+.te-color-picker-wrapper:hover {
+  background: var(--te-btn-hover);
+}
+
+.te-color-picker-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.te-color-icon {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.te-color-indicator {
+  position: absolute;
+  bottom: 4px;
+  left: 6px;
+  right: 6px;
+  height: 3px;
+  border-radius: 2px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
 /* Emoji Picker Styles */
 .te-emoji-picker {
   position: absolute;
@@ -278,5 +322,75 @@
   content: attr(data-placeholder);
   color: var(--te-placeholder);
   pointer-events: none;
+}
+
+/* Image Support */
+.te-image-container {
+  position: relative;
+  display: inline-block;
+  margin: 1.5rem 0;
+  max-width: 100%;
+  border-radius: var(--te-radius-lg);
+  overflow: visible; /* Changed to visible to show handles */
+  transition: box-shadow var(--te-transition-fast);
+  line-height: 0;
+}
+
+.te-image-container:hover {
+  box-shadow: 0 0 0 2px var(--te-primary-color);
+}
+
+.te-image-container.active {
+  box-shadow: 0 0 0 2px var(--te-primary-color), var(--te-shadow-lg);
+}
+
+.te-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.te-image-caption {
+  font-size: 0.875rem;
+  color: var(--te-text-muted);
+  text-align: center;
+  padding: 0.75rem;
+  background: var(--te-bg-app);
+  line-height: normal;
+  border-bottom-left-radius: var(--te-radius-lg);
+  border-bottom-right-radius: var(--te-radius-lg);
+}
+
+.te-image-caption:empty::before {
+  content: attr(data-placeholder);
+  color: var(--te-placeholder);
+}
+
+/* Resizer Handles */
+.te-image-resizer {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--te-primary-color);
+  border: 1px solid white;
+  z-index: 10;
+  display: none;
+}
+
+.te-image-container:hover .te-image-resizer,
+.te-image-container.active .te-image-resizer {
+  display: block;
+}
+
+.te-resizer-top-left { top: -5px; left: -5px; cursor: nwse-resize; }
+.te-resizer-top-right { top: -5px; right: -5px; cursor: nesw-resize; }
+.te-resizer-bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.te-resizer-bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+.te-content.dragover {
+  background: #f0f7ff;
+  outline: 2px dashed var(--te-primary-color);
+  outline-offset: -4px;
 }
 

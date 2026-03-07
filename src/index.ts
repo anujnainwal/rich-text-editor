@@ -11,6 +11,11 @@ export class TestEditor extends CoreEditor {
     this.toolbar = new Toolbar(this);
     // Move toolbar to the top of the container
     this.container.insertBefore(this.toolbar.el, this.editableElement);
+    
+    setTimeout(() => {
+        console.log("TOOLBAR HTML:", this.toolbar.el.outerHTML);
+        console.log("CONTAINER HTML:", this.container.outerHTML);
+    }, 1000);
   }
 }
 
