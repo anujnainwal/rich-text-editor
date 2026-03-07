@@ -70,7 +70,7 @@ export class Toolbar {
       if (item.command === 'createLink') {
         const url = window.prompt('Enter the URL');
         if (url) {
-          this.editor.execute('createLink', url);
+          this.editor.createLink(url);
         }
         return;
       }

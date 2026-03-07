@@ -219,6 +219,49 @@ export class CoreEditor {
   }
 
   /**
+   * Creates a link at the current selection.
+   * Ensures the link opens in a new tab with proper security attributes.
+   */
+  createLink(url: string): void {
+    this.focus();
+    
+    // Check if the URL has a protocol, if not add https://
+    if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url) && !url.startsWith('#')) {
+      url = 'https://' + url;
+    }
+
+    // Use execCommand to create the link initially
+    document.execCommand('createLink', false, url);
+
+    // Find the newly created anchor tag and add target="_blank"
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      let container = range.commonAncestorContainer as HTMLElement;
+      
+      // If the container is a text node, get its parent
+      if (container.nodeType === Node.TEXT_NODE) {
+        container = container.parentElement!;
+      }
+
+      // Look for the anchor tag
+      let anchor: HTMLAnchorElement | null = null;
+      if (container.tagName === 'A') {
+        anchor = container as HTMLAnchorElement;
+      } else {
+        anchor = container.querySelector('a');
+      }
+
+      if (anchor) {
+        anchor.setAttribute('target', '_blank');
+        anchor.setAttribute('rel', 'noopener noreferrer');
+      }
+    }
+
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /**
    * Returns the clean HTML content of the editor.
    */
   getHTML(): string {

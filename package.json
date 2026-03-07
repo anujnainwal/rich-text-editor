@@ -1,7 +1,7 @@
 {
-  "name": "test-editor",
+  "name": "@meenainwal/rich-text-editor",
   "version": "1.0.0",
-  "description": "",
+  "description": "A premium, lightweight, and framework-agnostic rich text editor with a sophisticated Slate & Indigo design.",
   "type": "module",
   "files": [
     "dist"
@@ -29,5 +29,17 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
-  }
+  },
+  "keywords": [
+    "rich-text-editor",
+    "wysiwyg",
+    "editor",
+    "vanilla-js",
+    "typescript",
+    "premium-ui",
+    "contenteditable"
+  ],
+  "author": "Anuj Nainwal",
+  "license": "MIT",
+  "homepage": "https://github.com/meenainwal/rich-text-editor#readme"
 }
