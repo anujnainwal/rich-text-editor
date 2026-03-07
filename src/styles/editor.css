@@ -1,0 +1,282 @@
+:root {
+  /* Premium Slate & Indigo Color Palette */
+  --te-primary-color: #6366f1; /* Indigo 500 */
+  --te-primary-hover: #4f46e5; /* Indigo 600 */
+  --te-bg-app: #f8fafc; /* Slate 50 */
+  --te-bg-editor: #ffffff;
+  --te-toolbar-bg: #ffffff;
+  --te-border-color: #e2e8f0; /* Slate 200 */
+  --te-border-focus: #cbd5e1; /* Slate 300 */
+  --te-text-main: #1e293b; /* Slate 800 */
+  --te-text-muted: #64748b; /* Slate 500 */
+  --te-placeholder: #94a3b8; /* Slate 400 */
+  --te-btn-hover: #f1f5f9; /* Slate 100 */
+  --te-btn-active: #e2e8f0; /* Slate 200 */
+  
+  /* Geometry & Shadows */
+  --te-radius-lg: 12px;
+  --te-radius-md: 8px;
+  --te-radius-sm: 6px;
+  --te-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --te-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --te-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --te-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.te-container {
+  display: flex;
+  flex-direction: column;
+  height: 500px; /* Fixed height to enable internal scrolling */
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-lg);
+  background: var(--te-bg-editor);
+  box-shadow: var(--te-shadow-sm);
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  color: var(--te-text-main);
+  transition: var(--te-transition);
+  max-width: 100%;
+}
+
+.te-container:focus-within {
+  border-color: var(--te-primary-color);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), var(--te-shadow-md);
+}
+
+.te-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--te-border-color);
+  background: var(--te-toolbar-bg);
+  align-items: center;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.te-divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--te-border-color);
+  margin: 0 6px;
+}
+
+.te-button, .te-select, .te-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--te-radius-sm);
+  cursor: pointer;
+  color: var(--te-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--te-transition);
+  box-sizing: border-box;
+}
+
+.te-button {
+  width: 32px;
+  padding: 0;
+}
+
+.te-button svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  fill: none;
+}
+
+.te-select {
+  padding: 0 24px 0 8px;
+  min-width: 120px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 12px;
+  border: 1px solid var(--te-border-color);
+  background-color: #fff;
+}
+
+.te-input {
+  width: 56px;
+  padding: 0 4px;
+  text-align: center;
+  cursor: text;
+  border: 1px solid var(--te-border-color);
+  background-color: #fff;
+}
+
+.te-color-picker {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-sm);
+  background: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.te-color-picker:hover {
+  border-color: var(--te-border-focus);
+}
+
+/* Emoji Picker Styles */
+.te-emoji-picker {
+  position: absolute;
+  width: 280px;
+  height: 320px;
+  background: #fff;
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-md);
+  box-shadow: var(--te-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  animation: te-fade-in 0.2s ease-out;
+}
+
+@keyframes te-fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.te-emoji-header {
+  padding: 12px;
+  border-bottom: 1px solid var(--te-border-color);
+}
+
+.te-emoji-search {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-sm);
+  font-size: 13px;
+  outline: none;
+  transition: var(--te-transition);
+}
+
+.te-emoji-search:focus {
+  border-color: var(--te-primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.te-emoji-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.te-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.te-emoji-category-title {
+  grid-column: span 7;
+  padding: 8px 4px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--te-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.te-emoji-item {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--te-radius-sm);
+  transition: var(--te-transition);
+}
+
+.te-emoji-item:hover {
+  background: var(--te-btn-hover);
+  transform: scale(1.1);
+}
+
+.te-emoji-empty {
+  grid-column: span 7;
+  text-align: center;
+  padding: 20px;
+  color: var(--te-text-muted);
+  font-size: 13px;
+}
+
+.te-button:hover {
+  background: var(--te-btn-hover);
+  color: var(--te-text-main);
+}
+
+.te-select:hover, .te-input:hover {
+  border-color: var(--te-border-focus);
+}
+
+.te-button.active {
+  background: var(--te-btn-active);
+  color: var(--te-primary-color);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.te-select:focus, .te-input:focus {
+  border-color: var(--te-primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  outline: none;
+  background: white;
+  color: var(--te-text-main);
+}
+
+
+.te-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 240px;
+  padding: 24px;
+  line-height: 1.25;
+  outline: none;
+  font-size: 16px;
+}
+
+.te-content p {
+  margin: 0 0 1.25em 0;
+}
+
+.te-content h1, .te-content h2, .te-content h3, .te-content h4, .te-content h5, .te-content h6 {
+  color: var(--te-text-main);
+  font-weight: 700;
+  margin: 1.5em 0 0.5em 0;
+  line-height: 1.25;
+}
+
+.te-content h1:first-child, .te-content p:first-child {
+  margin-top: 0;
+}
+
+.te-content h1 { font-size: 2.25em; }
+.te-content h2 { font-size: 1.875em; }
+.te-content h3 { font-size: 1.5em; }
+.te-content h4 { font-size: 1.25em; }
+
+.te-content[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--te-placeholder);
+  pointer-events: none;
+}
+

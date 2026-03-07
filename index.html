@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Editor Demo</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            padding: 80px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #1e293b;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 900px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 32px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        button#get-html {
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button#get-html:hover {
+            background-color: #4f46e5;
+            transform: translateY(-1px);
+        }
+        .output {
+            margin-top: 32px;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 12px;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid #334155;
+        }
+        .label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <h1>RichText Pro</h1>
+            <p class="subtitle">A premium, lightweight editing experience.</p>
+        </div>
+
+        <div class="card">
+            <span class="label">Editor Instance</span>
+            <div id="editor"></div>
+            
+            <div class="controls">
+                <button id="get-html">Export HTML</button>
+            </div>
+        </div>
+
+        <span class="label">HTML Output</span>
+        <div id="html-output" class="output">Click export to view markup...</div>
+    </div>
+
+    <script type="module">
+        import { TestEditor } from './src/index.ts';
+        
+        const editor = new TestEditor(document.getElementById('editor'), {
+            placeholder: 'Start writing something amazing...',
+            autofocus: true
+        });
+
+        document.getElementById('get-html').addEventListener('click', () => {
+            document.getElementById('html-output').textContent = editor.getHTML();
+        });
+    </script>
+</body>
+</html>

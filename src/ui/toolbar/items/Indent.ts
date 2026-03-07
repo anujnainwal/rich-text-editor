@@ -1,0 +1,8 @@
+import { ToolbarItem } from '../ToolbarItem';
+
+export const indent: ToolbarItem = {
+  type: 'button',
+  title: 'Indent',
+  command: 'indent',
+  icon: '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline><line x1="3" y1="12" x2="15" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>'
+};
