@@ -1,17 +1,26 @@
-# Premium Rich Text Editor
+# @meenainwal/rich-text-editor 🚀
 
-A lightweight, framework-agnostic, and beautifully designed rich text editor built with TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a premium writing experience with modern interactive states and smooth transitions.
+A premium, ultra-lightweight, framework-agnostic rich text editor built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience out-of-the-box.
 
-![Editor Preview](file:///home/nainwal/.gemini/antigravity/brain/3f0400ba-f085-44cc-ad19-5a06d9e21eb0/media__1772819009508.png)
+![Editor Preview](./editor-preview.png)
 
-## ✨ Features
+## ✨ Why Choose This Editor? (Pros & Cons)
 
-- 💅 **Premium UI**: Modern aesthetic with a curated color palette and refined geometry.
-- 🚀 **Zero Dependencies**: Pure Vanilla JS/TypeScript implementation.
-- 🛠 **Framework Agnostic**: Works perfectly with React, Vue, Svelte, or Next.js.
-- 🏗 **Clean HTML**: Produces semantic and sanitized HTML output.
-- 🔗 **Smart Links**: Automatically adds `target="_blank"` and security attributes.
-- 🔡 **Advanced Formatting**: Headings (H1-H6), dynamic font sizes, font families, and more.
+### 👍 Pros
+- **Zero Dependencies**: Pure Vanilla JS/TypeScript. No bloated third-party libraries.
+- **Microscopic Footprint**: Only **~25kB** compressed (Gzipped), meaning zero impact on your site's load time.
+- **Framework Agnostic**: Drop it into React, Vue, Angular, Svelte, or plain HTML projects seamlessly.
+- **Auto-Formatting Magic**: Intelligently parses pasted HTML strings automatically into perfectly formatted rich text.
+- **Beautiful UI**: Modern aesthetics curated with a polished Slate & Indigo color palette, smooth transitions, and dynamic SVG icons.
+- **Local Image Uploads**: Natively integrates with the OS file picker for rapid inline base64 image insertions.
+- **Flexible Styling**: Full control over font families, complex line heights, text colors, and highlighting.
+
+### 👎 Cons (Current Limitations)
+- Base64 image storage can increase the raw output string size for very large images (Backend S3 uploading adapter coming soon).
+- Lacks advanced table grid manipulations in the current version.
+- Markdown shortcut typing (e.g., typing `#` for H1) is not natively supported yet.
+
+---
 
 ## 📦 Installation
 
@@ -21,11 +30,11 @@ npm install @meenainwal/rich-text-editor
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### Basic Usage (Vanilla JS)
 
 ```javascript
 import { CoreEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/dist/test-editor.css';
+import '@meenainwal/rich-text-editor/dist/rich-text-editor.css'; // Import the CSS!
 
 const container = document.getElementById('editor');
 const editor = new CoreEditor(container, {
@@ -33,8 +42,8 @@ const editor = new CoreEditor(container, {
   autofocus: true
 });
 
-// Get content
-const content = editor.getHTML();
+// To extract the customized HTML:
+const htmlOutput = editor.getHTML();
 ```
 
 ### In React
@@ -42,7 +51,7 @@ const content = editor.getHTML();
 ```tsx
 import { useEffect, useRef } from 'react';
 import { CoreEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/dist/test-editor.css';
+import '@meenainwal/rich-text-editor/dist/rich-text-editor.css';
 
 export const EditorComponent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,20 +66,33 @@ export const EditorComponent = () => {
 };
 ```
 
-## ⚙️ Configuration
+---
+
+## 🗺️ Future Roadmap & Upcoming Updates
+
+As the project manager, we are aggressively expanding this editor. Next releases will feature:
+
+1. **Phase 2.1 - Markdown Power:** Seamless markdown shortcuts (typing `**bold**`, `## Header`) that auto-convert to rich text instantly.
+2. **Phase 2.2 - Table Support:** An interactive grid UI to insert, resize, and style complex HTML tables.
+3. **Phase 2.3 - Framework Wrappers:** Official, first-party wrapper components for `<ReactEditor />` and `<VueEditor />` for even faster plug-and-play.
+4. **Phase 2.4 - Advanced Image Handlers:** Providing hooks to intercept image uploads and pipe them to external buckets (AWS S3, Cloudinary) to return URLs instead of raw base64.
+
+---
+
+## ⚙️ Configuration Options
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `placeholder` | `string` | `undefined` | The placeholder text when the editor is empty. |
-| `autofocus` | `boolean` | `false` | Whether to focus the editor on initialization. |
+| `autofocus` | `boolean` | `false` | Whether to focus the editor automatically on initialization. |
 
 ## 🛠 API Methods
 
 - `getHTML()`: Returns the content as a sanitized HTML string.
-- `setHTML(html)`: Sets the editor content.
-- `focus()`: Programmatically focus the editor.
-- `execute(command, value)`: Execute standard editor commands.
+- `setHTML(html)`: Programmatically sets the editor content.
+- `focus()`: Forces focus onto the editor.
+- `execute(command, value)`: Execute standard editor commands internally.
 
 ## 📄 License
 
-MIT © [Anuj Nainwal](https://github.com/anujnainwal)
+MIT © [Anuj Nainwal](https://github.com/meenainwal)
