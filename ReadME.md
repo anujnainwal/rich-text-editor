@@ -46,6 +46,23 @@ const editor = new CoreEditor(container, {
 const htmlOutput = editor.getHTML();
 ```
 
+### Via CDN (Direct Download, No NPM Required)
+
+You can instantly drop the editor into any standard HTML page without installing tools or bundlers. Simply use standard CDN links (like `unpkg.com` or `jsdelivr.net`):
+
+```html
+<!-- Load the beautifully styled CSS -->
+<link rel="stylesheet" href="https://unpkg.com/@meenainwal/rich-text-editor/dist/rich-text-editor.css">
+
+<!-- Load the Logic Script as an ES Module -->
+<script type="module">
+  import { CoreEditor } from 'https://unpkg.com/@meenainwal/rich-text-editor/dist/test-editor.mjs';
+
+  const container = document.getElementById('editor');
+  const editor = new CoreEditor(container);
+</script>
+```
+
 ### In React
 
 ```tsx

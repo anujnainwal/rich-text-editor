@@ -41,5 +41,12 @@
   ],
   "author": "Anuj Nainwal",
   "license": "MIT",
-  "homepage": "https://github.com/meenainwal/rich-text-editor#readme"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anujnainwal/rich-text-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anujnainwal/rich-text-editor/issues"
+  },
+  "homepage": "https://github.com/anujnainwal/rich-text-editor#readme"
 }
