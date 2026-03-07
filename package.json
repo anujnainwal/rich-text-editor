@@ -4,7 +4,8 @@
   "description": "A premium, lightweight, and framework-agnostic rich text editor with a sophisticated Slate & Indigo design.",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "images"
   ],
   "main": "./dist/test-editor.cjs",
   "module": "./dist/test-editor.mjs",

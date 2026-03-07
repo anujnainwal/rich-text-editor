@@ -5,7 +5,7 @@
 
 A premium, ultra-lightweight, framework-agnostic rich text editor built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience out-of-the-box.
 
-![Editor Preview](https://raw.githubusercontent.com/anujnainwal/rich-text-editor/refs/heads/master/images/editor-preview.png)
+![Editor Preview](./images/editor-preview.png)
 
 ## ✨ Why Choose This Editor? (Pros & Cons)
 
