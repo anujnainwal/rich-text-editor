@@ -1,7 +1,7 @@
 # @meenainwal/rich-text-editor 🚀
 
-[![NPM Downloads](https://badgen.net/npm/dt/@meenainwal/rich-text-editor)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
-[![NPM Version](https://badgen.net/npm/v/@meenainwal/rich-text-editor)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
+[![NPM Downloads](https://img.shields.io/npm/dw/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
+[![NPM Version](https://img.shields.io/npm/v/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
 
 A premium, ultra-lightweight, framework-agnostic rich text editor built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience out-of-the-box.
 
