@@ -36,11 +36,11 @@ npm install @meenainwal/rich-text-editor
 ### Basic Usage (Vanilla JS)
 
 ```javascript
-import { CoreEditor } from '@meenainwal/rich-text-editor';
+import { TestEditor } from '@meenainwal/rich-text-editor';
 import '@meenainwal/rich-text-editor/dist/rich-text-editor.css'; // Import the CSS!
 
 const container = document.getElementById('editor');
-const editor = new CoreEditor(container, {
+const editor = new TestEditor(container, {
   placeholder: 'Type something beautiful...',
   autofocus: true
 });
@@ -59,10 +59,10 @@ You can instantly drop the editor into any standard HTML page without installing
 
 <!-- Load the Logic Script as an ES Module -->
 <script type="module">
-  import { CoreEditor } from 'https://unpkg.com/@meenainwal/rich-text-editor/dist/test-editor.mjs';
+  import { TestEditor } from 'https://unpkg.com/@meenainwal/rich-text-editor/dist/test-editor.mjs';
 
   const container = document.getElementById('editor');
-  const editor = new CoreEditor(container);
+  const editor = new TestEditor(container);
 </script>
 ```
 
@@ -70,7 +70,7 @@ You can instantly drop the editor into any standard HTML page without installing
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { CoreEditor } from '@meenainwal/rich-text-editor';
+import { TestEditor } from '@meenainwal/rich-text-editor';
 import '@meenainwal/rich-text-editor/dist/rich-text-editor.css';
 
 export const EditorComponent = () => {
@@ -78,7 +78,7 @@ export const EditorComponent = () => {
 
   useEffect(() => {
     if (containerRef.current) {
-        new CoreEditor(containerRef.current);
+        new TestEditor(containerRef.current);
     }
   }, []);
 
