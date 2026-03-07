@@ -1,6 +1,6 @@
 {
   "name": "@meenainwal/rich-text-editor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A premium, lightweight, and framework-agnostic rich text editor with a sophisticated Slate & Indigo design.",
   "type": "module",
   "files": [
