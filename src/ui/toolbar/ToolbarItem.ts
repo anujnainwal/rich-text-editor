@@ -6,6 +6,7 @@ export interface ToolbarItemOption {
 }
 
 export interface ToolbarItem {
+  id?: string;
   type: ToolbarItemType;
   title: string;
   command?: string;

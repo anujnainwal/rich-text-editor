@@ -12,6 +12,7 @@ build/
 mind
 client
 frontend-web
+next-frame
 # IDEs and editors
 .vscode/
 .idea/

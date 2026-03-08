@@ -9,6 +9,7 @@ export class Toolbar {
   private savedRange: Range | null = null;
   private items: ToolbarItem[] = toolbarItems;
   private activePicker: EmojiPicker | null = null;
+  private statusEl: HTMLElement | null = null;
 
   constructor(editor: CoreEditor) {
     this.editor = editor;
@@ -19,11 +20,55 @@ export class Toolbar {
   private createToolbarElement(): HTMLElement {
     const el = document.createElement('div');
     el.classList.add('te-toolbar');
+    
+    // Create status container on the right
+    this.statusEl = document.createElement('div');
+    this.statusEl.classList.add('te-toolbar-status');
+    this.statusEl.style.marginLeft = 'auto'; // Push to right
+    this.statusEl.style.display = 'flex';
+    this.statusEl.style.alignItems = 'center';
+    this.statusEl.style.gap = '6px';
+    this.statusEl.style.fontSize = '12px';
+    this.statusEl.style.color = 'var(--te-text-muted)';
+    this.statusEl.style.paddingRight = '12px';
+    
     return el;
   }
 
   private render(): void {
+    const allowedItems = this.editor.getOptions().toolbarItems;
+    
+    // First pass: identify visible items
+    const visibleItems: ToolbarItem[] = [];
     this.items.forEach(item => {
+      if (item.type === 'divider') {
+        visibleItems.push(item);
+      } else if (item.id && (!allowedItems || allowedItems.includes(item.id))) {
+        visibleItems.push(item);
+      }
+    });
+
+    // Second pass: clean up dividers
+    const finalItems: ToolbarItem[] = [];
+    visibleItems.forEach((item, index) => {
+      if (item.type === 'divider') {
+        // Skip leading dividers
+        if (finalItems.length === 0) return;
+        // Skip consecutive dividers
+        if (finalItems[finalItems.length - 1].type === 'divider') return;
+        
+        // Peek ahead to see if there are any non-divider items left
+        const hasMoreTools = visibleItems.slice(index + 1).some(next => next.type !== 'divider');
+        if (!hasMoreTools) return;
+
+        finalItems.push(item);
+      } else {
+        finalItems.push(item);
+      }
+    });
+
+    // Render the final set
+    finalItems.forEach(item => {
       if (item.type === 'button') {
         this.renderButton(item);
       } else if (item.type === 'select') {
@@ -38,6 +83,11 @@ export class Toolbar {
         this.container.appendChild(divider);
       }
     });
+
+    const showStatus = this.editor.getOptions().showStatus !== false;
+    if (showStatus) {
+      this.container.appendChild(this.statusEl!);
+    }
 
     // Handle selection change to update states
     this.editor.el.addEventListener('keyup', () => this.updateActiveStates());
@@ -58,7 +108,9 @@ export class Toolbar {
             (emoji) => {
               this.editor.execute('insertText', emoji);
             },
-            () => { this.activePicker = null; }
+            () => { this.activePicker = null; },
+            this.editor.getOptions().theme,
+            this.editor.getOptions().dark
           );
           this.activePicker.show(button);
         } else {
@@ -107,6 +159,21 @@ export class Toolbar {
           this.editor.insertImage(url);
         }
         */
+        return;
+      }
+
+      if (item.command === 'insertTable') {
+        const rows = window.prompt('Enter number of rows', '3');
+        const cols = window.prompt('Enter number of columns', '3');
+        if (rows && cols) {
+          this.editor.insertTable(parseInt(rows, 10), parseInt(cols, 10));
+        }
+        return;
+      }
+
+      if (['addRow', 'deleteRow', 'addColumn', 'deleteColumn'].includes(item.command || '')) {
+        const cmd = item.command as 'addRow' | 'deleteRow' | 'addColumn' | 'deleteColumn';
+        this.editor[cmd]();
         return;
       }
 
@@ -277,5 +344,21 @@ export class Toolbar {
         }
       }
     });
+  }
+
+  public updateStatus(text: string, isLoading: boolean = false): void {
+    if (!this.statusEl || this.editor.getOptions().showStatus === false) return;
+    
+    this.statusEl.innerHTML = '';
+    
+    if (isLoading) {
+      const loader = document.createElement('div');
+      loader.classList.add('te-toolbar-loader');
+      this.statusEl.appendChild(loader);
+    }
+    
+    const span = document.createElement('span');
+    span.textContent = text;
+    this.statusEl.appendChild(span);
   }
 }

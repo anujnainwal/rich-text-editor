@@ -1,4 +1,5 @@
 import { EMOJI_LIST, EmojiData } from './EmojiList';
+import { ThemeConfig } from '../../core/Editor';
 
 export class EmojiPicker {
   private container: HTMLElement;
@@ -7,9 +8,14 @@ export class EmojiPicker {
   private onSelect: (emoji: string) => void;
   private onClose: () => void;
 
-  constructor(onSelect: (emoji: string) => void, onClose: () => void) {
+  private theme?: ThemeConfig;
+  private dark?: boolean;
+
+  constructor(onSelect: (emoji: string) => void, onClose: () => void, theme?: ThemeConfig, dark?: boolean) {
     this.onSelect = onSelect;
     this.onClose = onClose;
+    this.theme = theme;
+    this.dark = dark;
     this.container = this.createPickerElement();
     this.searchInput = this.container.querySelector('.te-emoji-search') as HTMLInputElement;
     this.emojiGrid = this.container.querySelector('.te-emoji-grid') as HTMLElement;
@@ -21,6 +27,15 @@ export class EmojiPicker {
   private createPickerElement(): HTMLElement {
     const el = document.createElement('div');
     el.classList.add('te-emoji-picker');
+    
+    if (this.theme) {
+      this.applyTheme(el, this.theme);
+    }
+
+    if (this.dark) {
+      el.classList.add('te-dark');
+    }
+
     el.innerHTML = `
       <div class="te-emoji-header">
         <input type="text" class="te-emoji-search" placeholder="Search emoji...">
@@ -100,6 +115,36 @@ export class EmojiPicker {
 
       this.emojiGrid.appendChild(btn);
     });
+  }
+
+  private applyTheme(root: HTMLElement, theme: ThemeConfig): void {
+    const mapping: Record<keyof ThemeConfig, string> = {
+      primaryColor: '--te-primary-color',
+      primaryHover: '--te-primary-hover',
+      bgApp: '--te-bg-app',
+      bgEditor: '--te-bg-editor',
+      toolbarBg: '--te-toolbar-bg',
+      borderColor: '--te-border-color',
+      borderFocus: '--te-border-focus',
+      textMain: '--te-text-main',
+      textMuted: '--te-text-muted',
+      placeholder: '--te-placeholder',
+      btnHover: '--te-btn-hover',
+      btnActive: '--te-btn-active',
+      radiusLg: '--te-radius-lg',
+      radiusMd: '--te-radius-md',
+      radiusSm: '--te-radius-sm',
+      shadowSm: '--te-shadow-sm',
+      shadowMd: '--te-shadow-md',
+      shadowLg: '--te-shadow-lg'
+    };
+
+    for (const [key, variable] of Object.entries(mapping)) {
+      const value = theme[key as keyof ThemeConfig];
+      if (value) {
+        root.style.setProperty(variable, value);
+      }
+    }
   }
 
   public show(referenceEl: HTMLElement): void {

@@ -1,9 +1,39 @@
 import { SelectionManager } from './SelectionManager';
 import { ImageManager } from './ImageManager';
+import { HistoryManager } from './HistoryManager';
+
+export interface ThemeConfig {
+  primaryColor?: string;
+  primaryHover?: string;
+  bgApp?: string;
+  bgEditor?: string;
+  toolbarBg?: string;
+  borderColor?: string;
+  borderFocus?: string;
+  textMain?: string;
+  textMuted?: string;
+  placeholder?: string;
+  btnHover?: string;
+  btnActive?: string;
+  radiusLg?: string;
+  radiusMd?: string;
+  radiusSm?: string;
+  shadowSm?: string;
+  shadowMd?: string;
+  shadowLg?: string;
+}
 
 export interface EditorOptions {
   placeholder?: string;
   autofocus?: boolean;
+  theme?: ThemeConfig;
+  dark?: boolean;
+  onSave?: (html: string) => void;
+  onSaving?: () => void;
+  onChange?: (html: string) => void;
+  autoSaveInterval?: number; // ms, default 1000
+  showStatus?: boolean; // default true
+  toolbarItems?: string[]; // IDs of tools to show
 }
 
 export class CoreEditor {
@@ -11,23 +41,41 @@ export class CoreEditor {
   protected editableElement: HTMLElement;
   public selection: SelectionManager;
   protected imageManager: ImageManager;
+  private history: HistoryManager;
   protected options: EditorOptions;
+  private saveTimeout: any = null;
+  private historyTimeout: any = null;
   private pendingStyles: Record<string, string> = {};
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
-    this.container = container;
-    this.container.classList.add('te-container');
     this.options = options;
+    this.container = container;
+
+    // SSR Guard: Return early if called in a non-browser environment
+    if (typeof document === 'undefined' || !container) {
+      // Initialize minimal safe state
+      this.editableElement = {} as HTMLElement;
+      this.selection = {} as SelectionManager;
+      this.imageManager = {} as ImageManager;
+      this.history = {} as HistoryManager;
+      return;
+    }
+
+    this.container.classList.add('te-container');
+    if (this.options.dark) {
+      this.container.classList.add('te-dark');
+    }
     // Create the contenteditable area first
     this.editableElement = this.createEditableElement();
-    
+
     // Now initialize managers that depend on the element
     this.selection = new SelectionManager();
     this.imageManager = new ImageManager(this);
-    
+    this.history = new HistoryManager(this.editableElement.innerHTML);
+
     this.setupInputHandlers();
     this.setupImageObserver();
-    
+
     // Default structure: append editable area
     this.container.appendChild(this.editableElement);
 
@@ -35,8 +83,58 @@ export class CoreEditor {
       this.focus();
     }
 
+    if (this.options.theme) {
+      this.applyTheme(this.options.theme);
+    }
+
     // Set default paragraph separator to <p>
     document.execCommand('defaultParagraphSeparator', false, 'p');
+  }
+
+  /**
+   * Applies custom theme variables to the editor container.
+   */
+  private applyTheme(theme: ThemeConfig): void {
+    const root = this.container;
+    const mapping: Record<keyof ThemeConfig, string> = {
+      primaryColor: '--te-primary-color',
+      primaryHover: '--te-primary-hover',
+      bgApp: '--te-bg-app',
+      bgEditor: '--te-bg-editor',
+      toolbarBg: '--te-toolbar-bg',
+      borderColor: '--te-border-color',
+      borderFocus: '--te-border-focus',
+      textMain: '--te-text-main',
+      textMuted: '--te-text-muted',
+      placeholder: '--te-placeholder',
+      btnHover: '--te-btn-hover',
+      btnActive: '--te-btn-active',
+      radiusLg: '--te-radius-lg',
+      radiusMd: '--te-radius-md',
+      radiusSm: '--te-radius-sm',
+      shadowSm: '--te-shadow-sm',
+      shadowMd: '--te-shadow-md',
+      shadowLg: '--te-shadow-lg'
+    };
+
+    for (const [key, variable] of Object.entries(mapping)) {
+      const value = theme[key as keyof ThemeConfig];
+      if (value) {
+        root.style.setProperty(variable, value);
+      }
+    }
+  }
+
+  /**
+   * Toggles dark mode on the editor.
+   */
+  public setDarkMode(enabled: boolean): void {
+    this.options.dark = enabled;
+    if (enabled) {
+      this.container.classList.add('te-dark');
+    } else {
+      this.container.classList.remove('te-dark');
+    }
   }
 
   protected setupImageObserver(): void {
@@ -46,7 +144,7 @@ export class CoreEditor {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const el = node as HTMLElement;
-            
+
             // Check if the added node is an img itself
             if (el.tagName === 'IMG' && !el.closest('.te-image-container')) {
               this.wrapImage(el as HTMLImageElement);
@@ -90,7 +188,7 @@ export class CoreEditor {
     if (img.width) newImg.style.width = `${img.width}px`;
     if (img.height) newImg.style.height = `${img.height}px`;
     newImg.classList.add('te-image');
-    
+
     const caption = document.createElement('figcaption');
     caption.classList.add('te-image-caption');
     caption.setAttribute('contenteditable', 'true');
@@ -125,7 +223,7 @@ export class CoreEditor {
         if (!text) return;
 
         e.preventDefault();
-        
+
         const span = document.createElement('span');
         for (const [prop, val] of Object.entries(this.pendingStyles)) {
           span.style.setProperty(prop, val);
@@ -136,13 +234,13 @@ export class CoreEditor {
         if (range) {
           range.deleteContents();
           range.insertNode(span);
-          
+
           // Move cursor to the end of the newly inserted text
           const newRange = document.createRange();
           newRange.setStart(span.firstChild!, text.length);
           newRange.setEnd(span.firstChild!, text.length);
           this.selection.restoreSelection(newRange);
-          
+
           // Clear pending styles as they've been applied
           this.pendingStyles = {};
           this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
@@ -176,7 +274,7 @@ export class CoreEditor {
     this.editableElement.addEventListener('drop', (e) => {
       e.preventDefault();
       this.editableElement.classList.remove('dragover');
-      
+
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
         for (let i = 0; i < files.length; i++) {
@@ -218,31 +316,104 @@ export class CoreEditor {
       }
 
       // 2. Auto-format pasted raw HTML strings (if it contains block/inline tags)
-// If the clipboard has plain text that looks like HTML code, parse it.
-// We avoid touching it if the clipboard mainly has text/html rendering, 
-// UNLESS the user copied raw html code which comes in as text/plain.
-const plainText = clipboardData.getData('text/plain');
+      // If the clipboard has plain text that looks like HTML code, parse it.
+      // We avoid touching it if the clipboard mainly has text/html rendering, 
+      // UNLESS the user copied raw html code which comes in as text/plain.
+      const plainText = clipboardData.getData('text/plain');
 
-// Basic heuristic: string starts with a common tag or contains paired tags
-const isHtmlString = /<([a-z1-6]+)\b[^>]*>[\s\S]*<\/\1>/i.test(plainText) || /^\s*<[a-z1-6]+\b[^>]*>/i.test(plainText);
+      // Basic heuristic: string starts with a common tag or contains paired tags
+      const isHtmlString = /<([a-z1-6]+)\b[^>]*>[\s\S]*<\/\1>/i.test(plainText) || /^\s*<[a-z1-6]+\b[^>]*>/i.test(plainText);
 
-if (plainText && isHtmlString) {
-  // Clean the HTML string to remove newlines and excessive whitespace between tags
-  const cleanedHtml = plainText
-    .replace(/(\r\n|\n|\r)/gm, " ") // Remove all newlines
-    .replace(/>\s+</g, "><")         // Remove any remaining spaces between tags
-    .trim();
+      if (plainText && isHtmlString) {
+        // Clean the HTML string to remove newlines and excessive whitespace between tags
+        const cleanedHtml = plainText
+          .replace(/(\r\n|\n|\r)/gm, " ") // Remove all newlines
+          .replace(/>\s+</g, "><")         // Remove any remaining spaces between tags
+          .trim();
 
-  e.preventDefault();
-  this.execute('insertHTML', cleanedHtml);
-  return;
-}
+        e.preventDefault();
+        this.execute('insertHTML', cleanedHtml);
+        return;
+      }
 
-// 3. We no longer intercept text/html completely because the MutationObserver
-// will catch any raw <img> tags that the browser successfully pastes and 
-// automatically wrap them in our resizer containers. 
-// This is much safer than trying to parse clipboard HTML manually and breaking text formatting.
+      // 3. We no longer intercept text/html completely because the MutationObserver
+      // will catch any raw <img> tags that the browser successfully pastes and 
+      // automatically wrap them in our resizer containers. 
+      // This is much safer than trying to parse clipboard HTML manually and breaking text formatting.
     });
+
+    // Handle input for history and auto-save
+    this.editableElement.addEventListener('input', () => {
+      this.handleInput();
+    });
+
+    this.editableElement.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          this.redo();
+        } else {
+          this.undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.redo();
+      }
+    });
+  }
+
+  private handleInput(): void {
+    if (this.options.onSaving) {
+      this.options.onSaving();
+    }
+    
+    this.scheduleHistoryRecord();
+    this.scheduleAutoSave();
+    
+    if (this.options.onChange) {
+      this.options.onChange(this.editableElement.innerHTML);
+    }
+  }
+
+  private scheduleHistoryRecord(): void {
+    if (this.historyTimeout) clearTimeout(this.historyTimeout);
+    this.historyTimeout = setTimeout(() => {
+      this.history.record(this.editableElement.innerHTML);
+    }, 500); // Record after 500ms of inactivity
+  }
+
+  private scheduleAutoSave(): void {
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    const interval = this.options.autoSaveInterval || 1000;
+    this.saveTimeout = setTimeout(() => {
+      this.save();
+    }, interval);
+  }
+
+  public save(): void {
+    if (this.options.onSave) {
+      this.options.onSave(this.editableElement.innerHTML);
+    }
+  }
+
+  public undo(): void {
+    const html = this.history.undo();
+    if (html !== null) {
+      this.editableElement.innerHTML = html;
+      this.triggerChange();
+    }
+  }
+
+  public redo(): void {
+    const html = this.history.redo();
+    if (html !== null) {
+      this.editableElement.innerHTML = html;
+      this.triggerChange();
+    }
+  }
+
+  private triggerChange(): void {
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   protected createEditableElement(): HTMLElement {
@@ -281,13 +452,154 @@ if (plainText && isHtmlString) {
    */
   execute(command: string, value: string | null = null): void {
     this.focus();
-    
+
     // For font size and family, we might want custom logic in the future.
     // However, for standard commands, execCommand is still the easiest path for undo/redo.
     document.execCommand(command, false, value ?? undefined);
-    
+
     // Dispatch an input event to notify listeners of changes
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /**
+   * Inserts a table at the current selection.
+   */
+  insertTable(rows: number = 3, cols: number = 3): void {
+    this.focus();
+    const range = this.selection.getRange();
+    if (!range) return;
+
+    const table = document.createElement('table');
+    table.classList.add('te-table');
+    
+    for (let r = 0; r < rows; r++) {
+      const tr = document.createElement('tr');
+      for (let c = 0; c < cols; c++) {
+        const td = document.createElement('td');
+        td.innerHTML = '<br>'; // Empty cell
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    range.deleteContents();
+    range.insertNode(table);
+
+    // Ensure there's a paragraph after the table for the user to click into.
+    // If the next sibling isn't a paragraph, or it's just a lone <br>, add a fresh <p>.
+    const next = table.nextElementSibling;
+    if (!next || next.tagName !== 'P') {
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      table.after(p);
+      
+      // If there was a lone BR, remove it as we now have a proper P
+      if (next && next.tagName === 'BR') {
+        next.remove();
+      }
+    }
+
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /**
+   * Adds a row to the currently selected table.
+   */
+  addRow(): void {
+    const table = this.getSelectedTable();
+    if (!table) return;
+
+    const newRow = document.createElement('tr');
+    newRow.style.borderBottom = '1px solid var(--te-border-color)';
+    const cols = table.rows[0].cells.length;
+    for (let i = 0; i < cols; i++) {
+      const td = document.createElement('td');
+      td.innerHTML = '<br>';
+      newRow.appendChild(td);
+    }
+
+    const currentTd = this.getSelectedTd();
+    if (currentTd) {
+      currentTd.parentElement?.after(newRow);
+    } else {
+      table.appendChild(newRow);
+    }
+
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /**
+   * Deletes the currently selected row.
+   */
+  deleteRow(): void {
+    const td = this.getSelectedTd();
+    if (td && td.parentElement) {
+      const tr = td.parentElement;
+      const table = tr.parentElement as HTMLTableElement;
+      if (table.rows.length > 1) {
+        tr.remove();
+        this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  }
+
+  /**
+   * Adds a column to the currently selected table.
+   */
+  addColumn(): void {
+    const table = this.getSelectedTable();
+    if (!table) return;
+
+    const currentTd = this.getSelectedTd();
+    const cellIndex = currentTd ? currentTd.cellIndex : -1;
+
+    for (let i = 0; i < table.rows.length; i++) {
+      const row = table.rows[i];
+      const td = document.createElement('td');
+      td.innerHTML = '<br>';
+      if (cellIndex !== -1) {
+        row.cells[cellIndex].after(td);
+      } else {
+        row.appendChild(td);
+      }
+    }
+
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  /**
+   * Deletes the currently selected column.
+   */
+  deleteColumn(): void {
+    const td = this.getSelectedTd();
+    if (!td) return;
+
+    const table = this.getSelectedTable();
+    if (!table) return;
+
+    const cellIndex = td.cellIndex;
+    if (table.rows[0].cells.length > 1) {
+      for (let i = 0; i < table.rows.length; i++) {
+        table.rows[i].cells[cellIndex].remove();
+      }
+      this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  private getSelectedTd(): HTMLTableCellElement | null {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    let node = selection.anchorNode;
+    while (node && node !== this.editableElement) {
+      if (node.nodeName === 'TD') return node as HTMLTableCellElement;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  private getSelectedTable(): HTMLTableElement | null {
+    const td = this.getSelectedTd();
+    return td ? (td.closest('table') as HTMLTableElement) : null;
   }
 
   /**
@@ -346,22 +658,22 @@ if (plainText && isHtmlString) {
     } else {
       const span = document.createElement('span');
       span.style.setProperty(property, value);
-      
+
       try {
         const parentSpan = parent.tagName === 'SPAN' ? parent : null;
-        
+
         // NEW: Extract content and clean it up to prevent nesting issues
         const fragment = range.extractContents();
         this.clearStyleRecursive(fragment, property);
-        
+
         span.appendChild(fragment);
         range.insertNode(span);
-        
+
         // Cleanup: if the parent was a span and is now empty, remove it
         if (parentSpan && parentSpan.innerHTML === '') {
           parentSpan.remove();
         }
-        
+
         const newRange = document.createRange();
         newRange.selectNodeContents(span);
         resultRange = newRange;
@@ -387,7 +699,7 @@ if (plainText && isHtmlString) {
    */
   createLink(url: string): void {
     this.focus();
-    
+
     // Check if the URL has a protocol, if not add https://
     if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url) && !url.startsWith('#')) {
       url = 'https://' + url;
@@ -401,7 +713,7 @@ if (plainText && isHtmlString) {
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       let container = range.commonAncestorContainer as HTMLElement;
-      
+
       // If the container is a text node, get its parent
       if (container.nodeType === Node.TEXT_NODE) {
         container = container.parentElement!;
@@ -439,7 +751,7 @@ if (plainText && isHtmlString) {
     const img = document.createElement('img');
     img.src = url;
     img.classList.add('te-image');
-    
+
     const caption = document.createElement('figcaption');
     caption.classList.add('te-image-caption');
     caption.setAttribute('contenteditable', 'true');
@@ -492,5 +804,12 @@ if (plainText && isHtmlString) {
    */
   get el(): HTMLElement {
     return this.editableElement;
+  }
+
+  /**
+   * Returns the editor options.
+   */
+  getOptions(): EditorOptions {
+    return this.options;
   }
 }
