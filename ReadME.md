@@ -1,26 +1,27 @@
-# @meenainwal/rich-text-editor 🚀
+# @meenainwal/rich-text-editor 🚀 | Premium WYSIWYG Editor
 
 [![NPM Downloads](https://img.shields.io/npm/dw/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
 [![NPM Version](https://img.shields.io/npm/v/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
 
-A premium, ultra-lightweight, framework-agnostic rich text editor built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience out-of-the-box.
+A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience for React, Next.js, and modern web applications.
 
 ![Editor Preview](./images/editor-preview.png)
 
-## ✨ Why Choose This Editor? (Pros & Cons)
+## ✨ Premium Features & Why Choose This Editor?
 
-### 👍 Pros
+### 👍 Key Pros & Capabilities
 - **Zero Dependencies**: Pure Vanilla JS/TypeScript. No bloated third-party libraries.
-- **Microscopic Footprint**: Only **~25kB** compressed (Gzipped), meaning zero impact on your site's load time.
-- **Framework Agnostic**: Drop it into React, Vue, Angular, Svelte, or plain HTML projects seamlessly.
-- **Auto-Formatting Magic**: Intelligently parses pasted HTML strings automatically into perfectly formatted rich text.
-- **Beautiful UI**: Modern aesthetics curated with a polished Slate & Indigo color palette, smooth transitions, and dynamic SVG icons.
-- **Local Image Uploads**: Natively integrates with the OS file picker for rapid inline base64 image insertions.
-- **Flexible Styling**: Full control over font families, complex line heights, text colors, and highlighting.
+- **Microscopic Footprint**: Only **~25kB** gzipped, making it one of the most lightweight editors available.
+- **Framework Agnostic**: Native support for **React**, **Next.js**, **Vue**, **Angular**, and **Svelte**.
+- **Auto-Formatting Magic**: Intelligently parses pasted HTML strings into clean, formatted rich text.
+- **Professional UI/UX**: Modern aesthetics curated with a polished Slate & Indigo color palette.
+- **Table Support**: Natively insert and style interactive HTML tables.
+- **Emoji Picker**: Integrated searchable emoji library for expressive content.
+- **Dark Mode**: Sophisticated dark theme for premium developer experiences.
+- **Customizable Toolbar**: Granular control over tool visibility and layout.
 
 ### 👎 Cons (Current Limitations)
 - Base64 image storage can increase the raw output string size for very large images (Backend S3 uploading adapter coming soon).
-- Lacks advanced table grid manipulations in the current version.
 - Markdown shortcut typing (e.g., typing `#` for H1) is not natively supported yet.
 
 ---
@@ -37,65 +38,39 @@ npm install @meenainwal/rich-text-editor
 
 ```javascript
 import { TestEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/dist/rich-text-editor.css'; // Import the CSS!
+import '@meenainwal/rich-text-editor/style'; // Simple style import
 
 const container = document.getElementById('editor');
 const editor = new TestEditor(container, {
   placeholder: 'Type something beautiful...',
-  autofocus: true
+  autofocus: true,
+  showStatus: true,
+  toolbarItems: ['bold', 'italic', 'heading', 'table', 'link'] // Customize tools
 });
-
-// To extract the customized HTML:
-const htmlOutput = editor.getHTML();
 ```
 
-### Via CDN (Direct Download, No NPM Required)
-
-You can instantly drop the editor into any standard HTML page without installing tools or bundlers. Simply use standard CDN links (like `unpkg.com` or `jsdelivr.net`):
-
-```html
-<!-- Load the beautifully styled CSS -->
-<link rel="stylesheet" href="https://unpkg.com/@meenainwal/rich-text-editor/dist/rich-text-editor.css">
-
-<!-- Load the Logic Script as an ES Module -->
-<script type="module">
-  import { TestEditor } from 'https://unpkg.com/@meenainwal/rich-text-editor/dist/test-editor.mjs';
-
-  const container = document.getElementById('editor');
-  const editor = new TestEditor(container);
-</script>
-```
-
-### In React
+### In React / Next.js (SSR Safe)
 
 ```tsx
+"use client";
 import { useEffect, useRef } from 'react';
 import { TestEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/dist/rich-text-editor.css';
+import '@meenainwal/rich-text-editor/style';
 
-export const EditorComponent = () => {
+export default function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (containerRef.current) {
-        new TestEditor(containerRef.current);
+      new TestEditor(containerRef.current, {
+        onSave: (html) => console.log("Saved:", html)
+      });
     }
   }, []);
 
   return <div ref={containerRef} />;
-};
+}
 ```
-
----
-
-## 🗺️ Future Roadmap & Upcoming Updates
-
-As the project manager, we are aggressively expanding this editor. Next releases will feature:
-
-1. **Phase 2.1 - Markdown Power:** Seamless markdown shortcuts (typing `**bold**`, `## Header`) that auto-convert to rich text instantly.
-2. **Phase 2.2 - Table Support:** An interactive grid UI to insert, resize, and style complex HTML tables.
-3. **Phase 2.3 - Framework Wrappers:** Official, first-party wrapper components for `<ReactEditor />` and `<VueEditor />` for even faster plug-and-play.
-4. **Phase 2.4 - Advanced Image Handlers:** Providing hooks to intercept image uploads and pipe them to external buckets (AWS S3, Cloudinary) to return URLs instead of raw base64.
 
 ---
 
@@ -104,14 +79,22 @@ As the project manager, we are aggressively expanding this editor. Next releases
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `placeholder` | `string` | `undefined` | The placeholder text when the editor is empty. |
-| `autofocus` | `boolean` | `false` | Whether to focus the editor automatically on initialization. |
+| `autofocus` | `boolean` | `false` | Focus the editor automatically on initialization. |
+| `dark` | `boolean` | `false` | Enable sophisticated Dark Mode theme. |
+| `showStatus` | `boolean` | `true` | Show/hide the "Saved at..." status in the toolbar. |
+| `toolbarItems` | `string[]` | `all` | Array of tool IDs to display (e.g., `['bold', 'table']`). |
+| `onSave` | `function` | `undefined` | Callback triggered when content is saved. |
+| `autoSaveInterval` | `number` | `1000` | Delay in ms before auto-save triggers after typing. |
 
 ## 🛠 API Methods
 
 - `getHTML()`: Returns the content as a sanitized HTML string.
 - `setHTML(html)`: Programmatically sets the editor content.
 - `focus()`: Forces focus onto the editor.
-- `execute(command, value)`: Execute standard editor commands internally.
+- `setDarkMode(boolean)`: Dynamically toggle dark mode.
+- `insertTable(rows, cols)`: Programmatically insert a table.
+
+---
 
 ## 📄 License
 

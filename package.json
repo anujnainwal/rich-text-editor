@@ -1,7 +1,7 @@
 {
   "name": "@meenainwal/rich-text-editor",
-  "version": "1.0.8",
-  "description": "A premium, lightweight, and framework-agnostic rich text editor with a sophisticated Slate & Indigo design.",
+  "version": "1.0.9",
+  "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
   "files": [
     "dist"
@@ -43,13 +43,20 @@
     "vanilla-js",
     "typescript",
     "premium-ui",
-    "contenteditable"
+    "contenteditable",
+    "react-editor",
+    "nextjs-editor",
+    "customizable-toolbar",
+    "table-editor",
+    "emoji-picker",
+    "dark-mode",
+    "lightweight-editor"
   ],
   "author": "Anuj Nainwal",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anujnainwal/rich-text-editor.git"
+    "url": "git+https://github.com/anujnainwal/rich-text-editor.git"
   },
   "bugs": {
     "url": "https://github.com/anujnainwal/rich-text-editor/issues"
