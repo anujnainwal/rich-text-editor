@@ -11,60 +11,82 @@ export class ImageManager {
   private currentHandle: string | null = null;
   private aspectRatio = 1;
 
+  private boundMouseDown: (e: MouseEvent) => void;
+  private boundMouseMove: (e: MouseEvent) => void;
+  private boundMouseUp: () => void;
+  private boundKeyDown: (e: KeyboardEvent) => void;
+
   constructor(editor: CoreEditor) {
     this.editor = editor;
+    this.boundMouseDown = this.handleMouseDown.bind(this);
+    this.boundMouseMove = this.handleMouseMove.bind(this);
+    this.boundMouseUp = this.handleMouseUp.bind(this);
+    this.boundKeyDown = this.handleKeyDown.bind(this);
     this.setupListeners();
   }
 
   private setupListeners(): void {
     const el = this.editor.el;
+    el.addEventListener('mousedown', this.boundMouseDown);
+    window.addEventListener('mousemove', this.boundMouseMove);
+    window.addEventListener('mouseup', this.boundMouseUp);
+    el.addEventListener('keydown', this.boundKeyDown);
+  }
 
-    el.addEventListener('mousedown', (e) => {
-      const target = e.target as HTMLElement;
+  private handleMouseDown(e: MouseEvent): void {
+    const target = e.target as HTMLElement;
+    
+    // Handle resizer click
+    if (target.classList.contains('te-image-resizer')) {
+      e.preventDefault();
+      e.stopPropagation();
       
-      // Handle resizer click
-      if (target.classList.contains('te-image-resizer')) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const container = target.closest('.te-image-container') as HTMLElement;
-        if (container) {
-          this.selectImage(container);
-          this.startResize(e, target);
-        }
-        return;
-      }
-
-      // Handle image container click
       const container = target.closest('.te-image-container') as HTMLElement;
       if (container) {
         this.selectImage(container);
-      } else {
-        this.deselectImage();
+        this.startResize(e, target);
       }
-    });
+      return;
+    }
 
-    window.addEventListener('mousemove', (e) => {
-      if (this.isResizing) {
-        this.handleResize(e);
-      }
-    });
+    // Handle image container click
+    const container = target.closest('.te-image-container') as HTMLElement;
+    if (container) {
+      this.selectImage(container);
+    } else {
+      this.deselectImage();
+    }
+  }
 
-    window.addEventListener('mouseup', () => {
-      if (this.isResizing) {
-        this.stopResize();
-      }
-    });
+  private handleMouseMove(e: MouseEvent): void {
+    if (this.isResizing) {
+      this.handleResize(e);
+    }
+  }
 
-    // Handle backspace/delete for active image
-    el.addEventListener('keydown', (e) => {
-      if ((e.key === 'Backspace' || e.key === 'Delete') && this.activeContainer) {
-        e.preventDefault();
-        this.activeContainer.remove();
-        this.activeContainer = null;
-        this.editor.el.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    });
+  private handleMouseUp(): void {
+    if (this.isResizing) {
+      this.stopResize();
+    }
+  }
+
+  private handleKeyDown(e: KeyboardEvent): void {
+    if ((e.key === 'Backspace' || e.key === 'Delete') && this.activeContainer) {
+      e.preventDefault();
+      this.activeContainer.remove();
+      this.activeContainer = null;
+      this.editor.el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  public destroy(): void {
+    const el = this.editor.el;
+    if (el) {
+      el.removeEventListener('mousedown', this.boundMouseDown);
+      el.removeEventListener('keydown', this.boundKeyDown);
+    }
+    window.removeEventListener('mousemove', this.boundMouseMove);
+    window.removeEventListener('mouseup', this.boundMouseUp);
   }
 
   private selectImage(container: HTMLElement): void {

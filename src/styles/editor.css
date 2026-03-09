@@ -326,6 +326,7 @@
   line-height: 1.25;
   outline: none;
   font-size: 16px;
+  position: relative;
 }
 
 .te-content p {
@@ -348,10 +349,11 @@
 .te-content h3 { font-size: 1.5em; }
 .te-content h4 { font-size: 1.25em; }
 
-.te-content[data-placeholder]:empty::before {
+.te-content[data-placeholder].is-empty::before {
   content: attr(data-placeholder);
   color: var(--te-placeholder);
   pointer-events: none;
+  position: absolute;
 }
 
 /* Image Support */
@@ -471,5 +473,28 @@
 
 .te-dark .te-table td:hover {
   background-color: #1e293b;
+}
+
+/* Toolbar Loader */
+.te-toolbar-loader {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--te-primary-color);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: te-spin 1s linear infinite;
+}
+
+@keyframes te-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.te-toolbar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.3s ease;
 }
 

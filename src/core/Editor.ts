@@ -32,6 +32,7 @@ export interface EditorOptions {
   onSaving?: () => void;
   onChange?: (html: string) => void;
   autoSaveInterval?: number; // ms, default 1000
+  autoSave?: boolean; // default false
   showStatus?: boolean; // default true
   toolbarItems?: string[]; // IDs of tools to show
 }
@@ -46,6 +47,8 @@ export class CoreEditor {
   private saveTimeout: any = null;
   private historyTimeout: any = null;
   private pendingStyles: Record<string, string> = {};
+  private observer: MutationObserver | null = null;
+  private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
     this.options = options;
@@ -61,6 +64,8 @@ export class CoreEditor {
       return;
     }
 
+    // Clear container initially to prevent duplicates (especially in React Strict Mode)
+    this.container.innerHTML = '';
     this.container.classList.add('te-container');
     if (this.options.dark) {
       this.container.classList.add('te-dark');
@@ -75,6 +80,7 @@ export class CoreEditor {
 
     this.setupInputHandlers();
     this.setupImageObserver();
+    this.checkPlaceholder();
 
     // Default structure: append editable area
     this.container.appendChild(this.editableElement);
@@ -137,9 +143,58 @@ export class CoreEditor {
     }
   }
 
+  /**
+   * Destroys the editor instance and cleans up.
+   */
+  public destroy(): void {
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    if (this.historyTimeout) clearTimeout(this.historyTimeout);
+
+    // Clean up managers
+    if (this.imageManager && typeof (this.imageManager as any).destroy === 'function') {
+      (this.imageManager as any).destroy();
+    }
+
+    // Remove event listeners
+    this.eventListeners.forEach(({ target, type, handler }) => {
+      target.removeEventListener(type, handler);
+    });
+    this.eventListeners = [];
+
+    // Clear container
+    this.container.innerHTML = '';
+    this.container.classList.remove('te-container', 'te-dark');
+    this.container.removeAttribute('style');
+  }
+
+  protected checkPlaceholder(): void {
+    if (!this.editableElement) return;
+    
+    // Logically empty if it has no text and no images/other media
+    const isEmpty = this.editableElement.textContent?.trim() === '' && 
+                    !this.editableElement.querySelector('img') &&
+                    !this.editableElement.querySelector('table');
+    
+    if (isEmpty) {
+      this.editableElement.classList.add('is-empty');
+    } else {
+      this.editableElement.classList.remove('is-empty');
+    }
+  }
+
+  private addEventListener(target: EventTarget, type: string, handler: any, options?: any): void {
+    target.addEventListener(type, handler, options);
+    this.eventListeners.push({ target, type, handler });
+  }
+
   protected setupImageObserver(): void {
     // Automatically wrap any raw <img> tags that get inserted (e.g. via native paste or setHTML)
-    const observer = new MutationObserver((mutations) => {
+    this.observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
@@ -162,7 +217,7 @@ export class CoreEditor {
       });
     });
 
-    observer.observe(this.editableElement, {
+    this.observer.observe(this.editableElement, {
       childList: true,
       subtree: true
     });
@@ -217,7 +272,7 @@ export class CoreEditor {
   }
 
   protected setupInputHandlers(): void {
-    this.editableElement.addEventListener('beforeinput', (e: InputEvent) => {
+    this.addEventListener(this.editableElement, 'beforeinput', (e: InputEvent) => {
       if (e.inputType === 'insertText' && Object.keys(this.pendingStyles).length > 0) {
         const text = e.data;
         if (!text) return;
@@ -248,9 +303,13 @@ export class CoreEditor {
       }
     });
 
+    this.addEventListener(this.editableElement, 'input', () => {
+      this.checkPlaceholder();
+    });
+
     // Clear pending styles on selection change if the selection is no longer collapsed
     // or if the user clicks elsewhere.
-    document.addEventListener('selectionchange', () => {
+    this.addEventListener(document, 'selectionchange', () => {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -261,17 +320,17 @@ export class CoreEditor {
     });
 
     // Drag and Drop support for images
-    this.editableElement.addEventListener('dragover', (e) => {
+    this.addEventListener(this.editableElement, 'dragover', (e: DragEvent) => {
       e.preventDefault();
       e.dataTransfer!.dropEffect = 'copy';
       this.editableElement.classList.add('dragover');
     });
 
-    this.editableElement.addEventListener('dragleave', () => {
+    this.addEventListener(this.editableElement, 'dragleave', () => {
       this.editableElement.classList.remove('dragover');
     });
 
-    this.editableElement.addEventListener('drop', (e) => {
+    this.addEventListener(this.editableElement, 'drop', (e: DragEvent) => {
       e.preventDefault();
       this.editableElement.classList.remove('dragover');
 
@@ -292,7 +351,7 @@ export class CoreEditor {
     });
 
     // Handle paste events for images
-    this.editableElement.addEventListener('paste', (e) => {
+    this.addEventListener(this.editableElement, 'paste', (e: ClipboardEvent) => {
       const clipboardData = e.clipboardData;
       if (!clipboardData) return;
 
@@ -343,11 +402,11 @@ export class CoreEditor {
     });
 
     // Handle input for history and auto-save
-    this.editableElement.addEventListener('input', () => {
+    this.addEventListener(this.editableElement, 'input', () => {
       this.handleInput();
     });
 
-    this.editableElement.addEventListener('keydown', (e: KeyboardEvent) => {
+    this.addEventListener(this.editableElement, 'keydown', (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -363,12 +422,14 @@ export class CoreEditor {
   }
 
   private handleInput(): void {
-    if (this.options.onSaving) {
-      this.options.onSaving();
-    }
-    
     this.scheduleHistoryRecord();
-    this.scheduleAutoSave();
+
+    if (this.options.autoSave) {
+      if (this.options.onSaving) {
+        this.options.onSaving();
+      }
+      this.scheduleAutoSave();
+    }
     
     if (this.options.onChange) {
       this.options.onChange(this.editableElement.innerHTML);

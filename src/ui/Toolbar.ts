@@ -10,17 +10,20 @@ export class Toolbar {
   private items: ToolbarItem[] = toolbarItems;
   private activePicker: EmojiPicker | null = null;
   private statusEl: HTMLElement | null = null;
+  private boundUpdateActiveStates: () => void;
+
 
   constructor(editor: CoreEditor) {
     this.editor = editor;
     this.container = this.createToolbarElement();
+    this.boundUpdateActiveStates = this.updateActiveStates.bind(this);
     this.render();
   }
 
   private createToolbarElement(): HTMLElement {
     const el = document.createElement('div');
     el.classList.add('te-toolbar');
-    
+
     // Create status container on the right
     this.statusEl = document.createElement('div');
     this.statusEl.classList.add('te-toolbar-status');
@@ -31,13 +34,13 @@ export class Toolbar {
     this.statusEl.style.fontSize = '12px';
     this.statusEl.style.color = 'var(--te-text-muted)';
     this.statusEl.style.paddingRight = '12px';
-    
+
     return el;
   }
 
   private render(): void {
     const allowedItems = this.editor.getOptions().toolbarItems;
-    
+
     // First pass: identify visible items
     const visibleItems: ToolbarItem[] = [];
     this.items.forEach(item => {
@@ -56,7 +59,7 @@ export class Toolbar {
         if (finalItems.length === 0) return;
         // Skip consecutive dividers
         if (finalItems[finalItems.length - 1].type === 'divider') return;
-        
+
         // Peek ahead to see if there are any non-divider items left
         const hasMoreTools = visibleItems.slice(index + 1).some(next => next.type !== 'divider');
         if (!hasMoreTools) return;
@@ -90,8 +93,8 @@ export class Toolbar {
     }
 
     // Handle selection change to update states
-    this.editor.el.addEventListener('keyup', () => this.updateActiveStates());
-    this.editor.el.addEventListener('mouseup', () => this.updateActiveStates());
+    this.editor.el.addEventListener('keyup', this.boundUpdateActiveStates);
+    this.editor.el.addEventListener('mouseup', this.boundUpdateActiveStates);
   }
 
   private renderButton(item: ToolbarItem): void {
@@ -135,7 +138,7 @@ export class Toolbar {
         fileInput.addEventListener('change', (event) => {
           const target = event.target as HTMLInputElement;
           const file = target.files?.[0];
-          
+
           if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -144,14 +147,14 @@ export class Toolbar {
             };
             reader.readAsDataURL(file);
           }
-          
+
           // Cleanup
           document.body.removeChild(fileInput);
         });
 
         document.body.appendChild(fileInput);
         fileInput.click();
-        
+
         // Commented out URL prompt logic:
         /*
         const url = window.prompt('Enter the Image URL');
@@ -287,7 +290,7 @@ export class Toolbar {
       indicator.classList.add('te-color-indicator');
       indicator.style.backgroundColor = item.value || '#000000';
       iconBtn.appendChild(indicator);
-      
+
       wrapper.appendChild(iconBtn);
     }
 
@@ -348,17 +351,34 @@ export class Toolbar {
 
   public updateStatus(text: string, isLoading: boolean = false): void {
     if (!this.statusEl || this.editor.getOptions().showStatus === false) return;
-    
+
     this.statusEl.innerHTML = '';
-    
+
     if (isLoading) {
       const loader = document.createElement('div');
       loader.classList.add('te-toolbar-loader');
       this.statusEl.appendChild(loader);
     }
-    
+
     const span = document.createElement('span');
     span.textContent = text;
     this.statusEl.appendChild(span);
+  }
+
+  public destroy(): void {
+    // Remove event listeners
+    this.editor.el.removeEventListener('keyup', this.boundUpdateActiveStates);
+    this.editor.el.removeEventListener('mouseup', this.boundUpdateActiveStates);
+
+    // Close active picker if any
+    if (this.activePicker) {
+      this.activePicker.close();
+      this.activePicker = null;
+    }
+
+    // Remove from DOM
+    if (this.container.parentNode) {
+      this.container.parentNode.removeChild(this.container);
+    }
   }
 }

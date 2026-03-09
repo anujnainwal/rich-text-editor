@@ -40,13 +40,20 @@ export class TestEditor extends CoreEditor {
     this.container.insertBefore(this.toolbar.el, this.editableElement);
 
     // Initial status
-    if (augmentedOptions.showStatus !== false) {
+    if (augmentedOptions.showStatus !== false && this.toolbar) {
       this.toolbar.updateStatus('All changes saved', false);
     }
   }
 
   public getToolbar(): Toolbar {
     return this.toolbar;
+  }
+
+  public destroy(): void {
+    if (this.toolbar) {
+      this.toolbar.destroy();
+    }
+    super.destroy();
   }
 }
 

@@ -1,5 +1,5 @@
-import { EMOJI_LIST, EmojiData } from './EmojiList';
-import { ThemeConfig } from '../../core/Editor';
+import type { EmojiData } from './EmojiList';
+import type { ThemeConfig } from '../../core/Editor';
 
 export class EmojiPicker {
   private container: HTMLElement;
@@ -7,6 +7,7 @@ export class EmojiPicker {
   private emojiGrid: HTMLElement;
   private onSelect: (emoji: string) => void;
   private onClose: () => void;
+  private emojiList: EmojiData[] = [];
 
   private theme?: ThemeConfig;
   private dark?: boolean;
@@ -21,7 +22,19 @@ export class EmojiPicker {
     this.emojiGrid = this.container.querySelector('.te-emoji-grid') as HTMLElement;
 
     this.setupEvents();
-    this.renderEmojis(EMOJI_LIST);
+    this.loadEmojis();
+  }
+
+  private async loadEmojis(): Promise<void> {
+    this.emojiGrid.innerHTML = '<div class="te-emoji-loading">Loading...</div>';
+    try {
+      const { EMOJI_LIST } = await import('./EmojiList');
+      this.emojiList = EMOJI_LIST;
+      this.renderEmojis(this.emojiList);
+    } catch (error) {
+      console.error('Failed to load emojis:', error);
+      this.emojiGrid.innerHTML = '<div class="te-emoji-error">Failed to load</div>';
+    }
   }
 
   private createPickerElement(): HTMLElement {
@@ -54,7 +67,7 @@ export class EmojiPicker {
 
     this.searchInput.addEventListener('input', () => {
       const query = this.searchInput.value.toLowerCase();
-      const filtered = EMOJI_LIST.filter(e =>
+      const filtered = this.emojiList.filter(e =>
         e.name.toLowerCase().includes(query) ||
         e.category.toLowerCase().includes(query)
       );
