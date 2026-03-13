@@ -2,7 +2,7 @@ import { CoreEditor, EditorOptions } from './core/Editor';
 import { Toolbar } from './ui/Toolbar';
 import './styles/editor.css';
 
-export class TestEditor extends CoreEditor {
+export class InkFlowEditor extends CoreEditor {
   private toolbar: Toolbar;
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
@@ -39,10 +39,12 @@ export class TestEditor extends CoreEditor {
     // Move toolbar to the top of the container
     this.container.insertBefore(this.toolbar.el, this.editableElement);
 
-    // Initial status
     if (augmentedOptions.showStatus !== false && this.toolbar) {
       this.toolbar.updateStatus('All changes saved', false);
     }
+
+    // Trigger initial change to sync optimized content with parent
+    this.triggerChange();
   }
 
   public getToolbar(): Toolbar {

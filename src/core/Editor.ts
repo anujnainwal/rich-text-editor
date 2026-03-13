@@ -178,7 +178,9 @@ export class CoreEditor {
     // Logically empty if it has no text and no images/other media
     const isEmpty = this.editableElement.textContent?.trim() === '' && 
                     !this.editableElement.querySelector('img') &&
-                    !this.editableElement.querySelector('table');
+                    !this.editableElement.querySelector('table') &&
+                    !this.editableElement.querySelector('ul') &&
+                    !this.editableElement.querySelector('ol');
     
     if (isEmpty) {
       this.editableElement.classList.add('is-empty');
@@ -432,14 +434,16 @@ export class CoreEditor {
     }
     
     if (this.options.onChange) {
-      this.options.onChange(this.editableElement.innerHTML);
+      this.options.onChange(this.getHTML());
     }
   }
 
   private scheduleHistoryRecord(): void {
     if (this.historyTimeout) clearTimeout(this.historyTimeout);
     this.historyTimeout = setTimeout(() => {
-      this.history.record(this.editableElement.innerHTML);
+      const html = this.editableElement.innerHTML;
+      const path = this.selection.getSelectionPath(this.editableElement);
+      this.history.record(html, path);
     }, 500); // Record after 500ms of inactivity
   }
 
@@ -453,27 +457,33 @@ export class CoreEditor {
 
   public save(): void {
     if (this.options.onSave) {
-      this.options.onSave(this.editableElement.innerHTML);
+      this.options.onSave(this.getHTML());
     }
   }
 
   public undo(): void {
-    const html = this.history.undo();
-    if (html !== null) {
-      this.editableElement.innerHTML = html;
+    const state = this.history.undo();
+    if (state !== null) {
+      this.editableElement.innerHTML = state.html;
+      if (state.selection) {
+        this.selection.restoreSelectionPath(this.editableElement, state.selection);
+      }
       this.triggerChange();
     }
   }
 
   public redo(): void {
-    const html = this.history.redo();
-    if (html !== null) {
-      this.editableElement.innerHTML = html;
+    const state = this.history.redo();
+    if (state !== null) {
+      this.editableElement.innerHTML = state.html;
+      if (state.selection) {
+        this.selection.restoreSelectionPath(this.editableElement, state.selection);
+      }
       this.triggerChange();
     }
   }
 
-  private triggerChange(): void {
+  protected triggerChange(): void {
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
@@ -520,6 +530,9 @@ export class CoreEditor {
 
     // Dispatch an input event to notify listeners of changes
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Normalize HTML after execution to fix any invalid nesting (like lists inside paragraphs)
+    this.normalize();
   }
 
   /**
@@ -592,13 +605,26 @@ export class CoreEditor {
   /**
    * Deletes the currently selected row.
    */
-  deleteRow(): void {
+  public deleteRow(): void {
     const td = this.getSelectedTd();
-    if (td && td.parentElement) {
-      const tr = td.parentElement;
-      const table = tr.parentElement as HTMLTableElement;
-      if (table.rows.length > 1) {
+      if (td && td.parentElement) {
+        const tr = td.parentElement as HTMLTableRowElement;
+        const table = tr.parentElement as HTMLTableElement;
+        if (table.rows.length > 1) {
+          // QA FIX: Find a neighbor to focus BEFORE deleting
+          const rowIndex = tr.rowIndex;
+        const neighbor = table.rows[rowIndex + 1] || table.rows[rowIndex - 1];
+        const cellIndex = td.cellIndex;
+
         tr.remove();
+
+        if (neighbor && neighbor.cells[cellIndex]) {
+          const range = document.createRange();
+          range.selectNodeContents(neighbor.cells[cellIndex]);
+          range.collapse(true);
+          this.selection.restoreSelection(range);
+        }
+
         this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
@@ -631,7 +657,7 @@ export class CoreEditor {
   /**
    * Deletes the currently selected column.
    */
-  deleteColumn(): void {
+  public deleteColumn(): void {
     const td = this.getSelectedTd();
     if (!td) return;
 
@@ -640,9 +666,20 @@ export class CoreEditor {
 
     const cellIndex = td.cellIndex;
     if (table.rows[0].cells.length > 1) {
+      // QA FIX: Find a neighbor to focus
+      const neighborCell = td.nextElementSibling || td.previousElementSibling;
+      
       for (let i = 0; i < table.rows.length; i++) {
         table.rows[i].cells[cellIndex].remove();
       }
+
+      if (neighborCell) {
+        const range = document.createRange();
+        range.selectNodeContents(neighborCell);
+        range.collapse(true);
+        this.selection.restoreSelection(range);
+      }
+
       this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
@@ -684,14 +721,12 @@ export class CoreEditor {
    * This is used for properties like font-size (px) and font-family
    * where execCommand is outdated or limited.
    */
+  /**
+   * Applies an inline style to the selection.
+   * This is used for properties like font-size (px) and font-family
+   * where execCommand is outdated or limited.
+   */
   setStyle(property: string, value: string, range?: Range): Range | null {
-    if (property === 'font-size') {
-      // The tests expect raw value passthrough (UI handles bounds)
-      if (!value.endsWith('px')) {
-        // Just a safety check if no unit is provided
-      }
-    }
-
     if (!range) {
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return null;
@@ -701,6 +736,12 @@ export class CoreEditor {
     if (range.collapsed) {
       this.pendingStyles[property] = value;
       return range;
+    }
+
+    // Handle block-level properties (like line-height) differently
+    const blockProperties = ['line-height'];
+    if (blockProperties.includes(property)) {
+      return this.setBlockStyle(property, value, range);
     }
 
     // Check if the current selection is already inside a span with this property
@@ -752,6 +793,42 @@ export class CoreEditor {
 
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
     return resultRange;
+  }
+
+  /**
+   * Applies a style to the block-level containers within the range.
+   */
+  private setBlockStyle(property: string, value: string, range: Range): Range | null {
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'TD', 'TH', 'DIV', 'BLOCKQUOTE'];
+    const blocks = new Set<HTMLElement>();
+
+    // 1. Check all candidate blocks inside the editor for overlap with selection
+    const candidates = Array.from(this.editableElement.querySelectorAll(blockTags.join(','))) as HTMLElement[];
+    candidates.forEach(candidate => {
+      if (range.intersectsNode(candidate)) {
+        blocks.add(candidate);
+      }
+    });
+
+    // 2. If no inner blocks found (e.g. selection is entirely inside a block's text),
+    // find the closest ancestor block of the selection start
+    if (blocks.size === 0) {
+      let node: Node | null = range.commonAncestorContainer;
+      while (node && node !== this.editableElement.parentElement) {
+        if (node.nodeType === Node.ELEMENT_NODE && blockTags.includes((node as HTMLElement).tagName)) {
+          blocks.add(node as HTMLElement);
+          break;
+        }
+        node = node.parentNode;
+      }
+    }
+
+    blocks.forEach(block => {
+      block.style.setProperty(property, value);
+    });
+
+    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+    return range;
   }
 
   /**
@@ -847,10 +924,159 @@ export class CoreEditor {
   }
 
   /**
-   * Returns the clean HTML content of the editor.
+   * Returns the clean and optimized HTML content of the editor.
    */
   getHTML(): string {
-    return this.editableElement.innerHTML;
+    return this.normalizeHTML(this.editableElement.innerHTML);
+  }
+
+  /**
+   * Normalizes the editor's content in-place.
+   */
+  public normalize(): void {
+    const raw = this.editableElement.innerHTML;
+    
+    // CRITICAL QA FIX: Use marker-based preservation for structural changes
+    const selection = this.selection.getRange();
+    let startMarker: HTMLElement | null = null;
+    let endMarker: HTMLElement | null = null;
+
+    if (selection && this.editableElement.contains(selection.commonAncestorContainer)) {
+      startMarker = document.createElement('span');
+      startMarker.id = 'te-selection-start';
+      startMarker.style.display = 'none';
+      
+      endMarker = document.createElement('span');
+      endMarker.id = 'te-selection-end';
+      endMarker.style.display = 'none';
+
+      const startRange = selection.cloneRange();
+      startRange.collapse(true);
+      startRange.insertNode(startMarker);
+
+      const endRange = selection.cloneRange();
+      endRange.collapse(false);
+      endRange.insertNode(endMarker);
+    }
+
+    const normalized = this.normalizeHTML(this.editableElement.innerHTML);
+    
+    // Always apply if markers were added, or if HTML changed
+    if (normalized !== raw || startMarker) {
+      this.editableElement.innerHTML = normalized;
+      
+      const newStart = this.editableElement.querySelector('#te-selection-start');
+      const newEnd = this.editableElement.querySelector('#te-selection-end');
+
+      if (newStart && newEnd) {
+        const range = document.createRange();
+        range.setStartAfter(newStart);
+        range.setEndBefore(newEnd);
+        this.selection.restoreSelection(range);
+      }
+
+      // Cleanup markers
+      this.editableElement.querySelectorAll('#te-selection-start, #te-selection-end').forEach(el => el.remove());
+    }
+  }
+
+  /**
+   * Optimizes HTML by fixing invalid nesting and removing redundant tags.
+   */
+  private normalizeHTML(html: string): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const body = doc.body;
+
+    // 0. Wrap top-level text nodes and inline elements in <p>
+    // This ensures consistent paragraph spacing (margins)
+    const rootNodes = Array.from(body.childNodes);
+    let currentParagraph: HTMLElement | null = null;
+
+    rootNodes.forEach(node => {
+      // Check if node is inline (text or inline element like span/b/i)
+      const isInline = node.nodeType === Node.TEXT_NODE || 
+                       (node.nodeType === Node.ELEMENT_NODE && 
+                        !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR'].includes((node as HTMLElement).tagName));
+      
+      if (isInline) {
+        // Skip whitespace-only text nodes between blocks
+        if (node.nodeType === Node.TEXT_NODE && (node.textContent || '').trim() === '' && !currentParagraph) {
+          return;
+        }
+
+        if (!currentParagraph) {
+          currentParagraph = doc.createElement('p');
+          node.before(currentParagraph);
+        }
+        currentParagraph.appendChild(node);
+      } else {
+        currentParagraph = null;
+      }
+    });
+
+    // 1. Fix list nesting: lift <ul> and <ol> out of <p>
+    const paras = body.querySelectorAll('p');
+    paras.forEach(p => {
+      const lists = p.querySelectorAll('ul, ol');
+      if (lists.length > 0) {
+        lists.forEach(list => {
+          // Move list after the paragraph
+          p.after(list);
+        });
+        // If the paragraph is now empty (or only has whitespace/BR), remove it
+        if (p.innerHTML.trim() === '' || p.innerHTML.trim() === '<br>') {
+          p.remove();
+        }
+      }
+    });
+
+    // 2. Remove redundant spans (those without attributes or empty)
+    body.querySelectorAll('span').forEach(span => {
+      // QA FIX: Do not remove selection markers
+      if (span.id.startsWith('te-selection-')) return;
+
+      if (span.attributes.length === 0) {
+        const text = doc.createTextNode(span.textContent || '');
+        span.replaceWith(text);
+      } else if (span.innerHTML.trim() === '') {
+        span.remove();
+      }
+    });
+
+    // 3. Ensure every block is wrapped in <p> if it's top-level text (optional but good for consistency)
+    // For now, let's focus on cleaning up what's there.
+
+    // 4. Remove empty paragraphs (except if it's the only one or has a BR)
+    // CRITICAL: We also want to trim trailing empty paragraphs from the output
+    const allParas = Array.from(body.querySelectorAll('p'));
+    
+    // First remove empty ones in the middle
+    allParas.forEach(p => {
+      if (p.innerHTML.trim() === '' && body.childNodes.length > 1 && p !== body.lastElementChild) {
+        p.remove();
+      }
+    });
+
+    // Then trim from the end
+    for (let i = allParas.length - 1; i >= 0; i--) {
+      const p = allParas[i];
+      const isEmpty = p.innerHTML.trim() === '' || p.innerHTML.trim() === '<br>';
+      const isLast = p === body.lastElementChild;
+      
+      if (isEmpty && isLast && body.children.length > 1) {
+        p.remove();
+      } else {
+        break;
+      }
+    }
+
+    // 5. Final check: if the output is just an empty paragraph, return empty string
+    if (body.innerHTML.trim() === '<p><br></p>' || body.innerHTML.trim() === '<p></p>') {
+      return '';
+    }
+
+    return body.innerHTML;
   }
 
   /**

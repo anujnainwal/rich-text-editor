@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Editor Demo</title>
+    <title>InkFlow Editor Demo</title>
     <style>
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -87,7 +87,7 @@
 <body>
     <div class="wrapper">
         <div class="header">
-            <h1>RichText Pro</h1>
+            <h1>InkFlow Editor</h1>
             <p class="subtitle">A premium, lightweight editing experience.</p>
         </div>
 
@@ -105,9 +105,9 @@
     </div>
 
     <script type="module">
-        import { TestEditor } from './src/index.ts';
+        import { InkFlowEditor } from './src/index.ts';
         
-        const editor = new TestEditor(document.getElementById('editor'), {
+        const editor = new InkFlowEditor(document.getElementById('editor'), {
             placeholder: 'Start writing something amazing...',
             autofocus: true
         });

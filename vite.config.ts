@@ -6,8 +6,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'TestEditor',
-      fileName: (format) => `test-editor.${format === 'es' ? 'mjs' : 'cjs'}`,
+      name: 'InkFlowEditor',
+      fileName: (format) => `inkflow-editor.${format === 'es' ? 'mjs' : 'cjs'}`,
       formats: ['es', 'cjs'],
     },
     rollupOptions: {

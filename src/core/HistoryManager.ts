@@ -1,6 +1,6 @@
 export interface HistoryState {
   html: string;
-  // We can add cursor position/selection data here later if needed
+  selection: { startPath: number[], startOffset: number, endPath: number[], endOffset: number } | null;
 }
 
 export class HistoryManager {
@@ -10,7 +10,7 @@ export class HistoryManager {
 
   constructor(initialState?: string) {
     if (initialState !== undefined) {
-      this.record(initialState);
+      this.record(initialState, null);
     }
   }
 
@@ -18,9 +18,11 @@ export class HistoryManager {
    * Records a new state in the history stack.
    * Clears any "redo" states if we record a new action.
    */
-  public record(html: string): void {
+  public record(html: string, selection: HistoryState['selection'] | null): void {
     // If the new state is identical to the current one, do nothing
+    // Note: We check HTML identity, but we still update the selection if it changed
     if (this.index >= 0 && this.stack[this.index].html === html) {
+      this.stack[this.index].selection = selection;
       return;
     }
 
@@ -29,7 +31,7 @@ export class HistoryManager {
       this.stack = this.stack.slice(0, this.index + 1);
     }
 
-    this.stack.push({ html });
+    this.stack.push({ html, selection });
     this.index++;
 
     // Limit stack size
@@ -42,10 +44,10 @@ export class HistoryManager {
   /**
    * Returns the previous state if available.
    */
-  public undo(): string | null {
+  public undo(): HistoryState | null {
     if (this.index > 0) {
       this.index--;
-      return this.stack[this.index].html;
+      return this.stack[this.index];
     }
     return null;
   }
@@ -53,10 +55,10 @@ export class HistoryManager {
   /**
    * Returns the next state if available.
    */
-  public redo(): string | null {
+  public redo(): HistoryState | null {
     if (this.index < this.stack.length - 1) {
       this.index++;
-      return this.stack[this.index].html;
+      return this.stack[this.index];
     }
     return null;
   }

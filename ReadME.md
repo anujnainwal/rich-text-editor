@@ -69,11 +69,11 @@ npm install @meenainwal/rich-text-editor
 ### Basic Usage (Vanilla JS)
 
 ```javascript
-import { TestEditor } from '@meenainwal/rich-text-editor';
+import { InkFlowEditor } from '@meenainwal/rich-text-editor';
 import '@meenainwal/rich-text-editor/style'; // Simple style import
 
 const container = document.getElementById('editor');
-const editor = new TestEditor(container, {
+const editor = new InkFlowEditor(container, {
   placeholder: 'Type something beautiful...',
   autofocus: true,
   showStatus: true,
@@ -86,16 +86,16 @@ In React **Strict Mode**, components mount twice in development. Always use the 
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { TestEditor } from '@meenainwal/rich-text-editor';
+import { InkFlowEditor } from '@meenainwal/rich-text-editor';
 import '@meenainwal/rich-text-editor/style';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<TestEditor | null>(null);
+  const editorRef = useRef<InkFlowEditor | null>(null);
 
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
-      editorRef.current = new TestEditor(containerRef.current, {
+      editorRef.current = new InkFlowEditor(containerRef.current, {
         placeholder: 'Start writing...',
       });
     }
@@ -118,7 +118,7 @@ For Next.js, ensure the editor is only initialized on the client side using `use
 ```tsx
 "use client";
 import { useEffect, useRef } from 'react';
-import { TestEditor } from '@meenainwal/rich-text-editor';
+import { InkFlowEditor } from '@meenainwal/rich-text-editor';
 import '@meenainwal/rich-text-editor/style';
 
 export default function MyEditor() {
@@ -127,7 +127,7 @@ export default function MyEditor() {
   useEffect(() => {
     if (!containerRef.current) return;
     
-    const editor = new TestEditor(containerRef.current, {
+    const editor = new InkFlowEditor(containerRef.current, {
       onSave: (html) => console.log(html)
     });
 

@@ -336,8 +336,8 @@
 .te-content h1, .te-content h2, .te-content h3, .te-content h4, .te-content h5, .te-content h6 {
   color: var(--te-text-main) !important;
   font-weight: 700;
-  margin: 1.5em 0 0.5em 0;
-  line-height: 1.25;
+  margin: 1rem 0 0.5rem 0;
+  line-height: 1.1;
 }
 
 .te-content h1:first-child, .te-content p:first-child {

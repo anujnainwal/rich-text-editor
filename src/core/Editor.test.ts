@@ -33,7 +33,7 @@ describe('CoreEditor', () => {
   });
 
   it('should initialize with default content', () => {
-    expect(editor.getHTML()).toBe('<p><br></p>');
+    expect(editor.getHTML()).toBe('');
   });
 
   it('should execute basic formatting commands', () => {

@@ -31,6 +31,7 @@ export class ImageManager {
     window.addEventListener('mousemove', this.boundMouseMove);
     window.addEventListener('mouseup', this.boundMouseUp);
     el.addEventListener('keydown', this.boundKeyDown);
+    el.addEventListener('blur', this.deselectImage.bind(this));
   }
 
   private handleMouseDown(e: MouseEvent): void {
@@ -72,10 +73,16 @@ export class ImageManager {
 
   private handleKeyDown(e: KeyboardEvent): void {
     if ((e.key === 'Backspace' || e.key === 'Delete') && this.activeContainer) {
-      e.preventDefault();
-      this.activeContainer.remove();
-      this.activeContainer = null;
-      this.editor.el.dispatchEvent(new Event('input', { bubbles: true }));
+      // CRITICAL QA FIX: Check if the selection is actually within the active image container
+      // If the user has clicked away but the image is still "active" in our state,
+      // we should not delete it.
+      const range = this.editor.selection.getRange();
+      if (range && this.activeContainer.contains(range.commonAncestorContainer)) {
+        e.preventDefault();
+        this.activeContainer.remove();
+        this.activeContainer = null;
+        this.editor.el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
   }
 
@@ -84,6 +91,7 @@ export class ImageManager {
     if (el) {
       el.removeEventListener('mousedown', this.boundMouseDown);
       el.removeEventListener('keydown', this.boundKeyDown);
+      el.removeEventListener('blur', this.deselectImage.bind(this));
     }
     window.removeEventListener('mousemove', this.boundMouseMove);
     window.removeEventListener('mouseup', this.boundMouseUp);
