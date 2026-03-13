@@ -1,6 +1,7 @@
 import { SelectionManager } from './SelectionManager';
 import { ImageManager } from './ImageManager';
 import { HistoryManager } from './HistoryManager';
+import { FloatingToolbar } from '../ui/toolbar/FloatingToolbar';
 
 export interface ThemeConfig {
   primaryColor?: string;
@@ -48,6 +49,7 @@ export class CoreEditor {
   private historyTimeout: any = null;
   private pendingStyles: Record<string, string> = {};
   private observer: MutationObserver | null = null;
+  private floatingToolbar: FloatingToolbar | null = null;
   private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
   private isUndoingRedoing: boolean = false;
 
@@ -97,6 +99,12 @@ export class CoreEditor {
 
     // Set default paragraph separator to <p>
     document.execCommand('defaultParagraphSeparator', false, 'p');
+
+    // Initialize floating toolbar
+    this.floatingToolbar = new FloatingToolbar(this);
+    if (this.options.dark) {
+      this.floatingToolbar.setDarkMode(true);
+    }
   }
 
   /**
@@ -140,8 +148,10 @@ export class CoreEditor {
     this.options.dark = enabled;
     if (enabled) {
       this.container.classList.add('te-dark');
+      this.floatingToolbar?.setDarkMode(true);
     } else {
       this.container.classList.remove('te-dark');
+      this.floatingToolbar?.setDarkMode(false);
     }
   }
 
@@ -172,6 +182,11 @@ export class CoreEditor {
     this.container.innerHTML = '';
     this.container.classList.remove('te-container', 'te-dark');
     this.container.removeAttribute('style');
+
+    if (this.floatingToolbar) {
+      this.floatingToolbar.destroy();
+      this.floatingToolbar = null;
+    }
   }
 
   protected checkPlaceholder(): void {
@@ -888,9 +903,17 @@ export class CoreEditor {
   createLink(url: string): void {
     this.focus();
 
-    // Check if the URL has a protocol, if not add https://
+    // Check if it's an email address
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const isEmail = emailRegex.test(url);
+
+    // Check if the URL has a protocol, if not add appropriate one
     if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url) && !url.startsWith('#')) {
-      url = 'https://' + url;
+      if (isEmail) {
+        url = 'mailto:' + url;
+      } else {
+        url = 'https://' + url;
+      }
     }
 
     // Use execCommand to create the link initially

@@ -1,6 +1,7 @@
 .te-container,
 .te-emoji-picker,
-.te-modal {
+.te-modal,
+.te-floating-toolbar {
   /* Premium Slate & Indigo Color Palette */
   --te-primary-color: #6366f1; /* Indigo 500 */
   --te-primary-hover: #4f46e5; /* Indigo 600 */
@@ -29,7 +30,8 @@
 
 .te-container.te-dark,
 .te-emoji-picker.te-dark,
-.te-modal.te-dark {
+.te-modal.te-dark,
+.te-floating-toolbar.te-dark {
   --te-primary-color: #818cf8 !important;
   --te-primary-hover: #6366f1 !important;
   --te-bg-app: #0f172a !important;
@@ -49,7 +51,8 @@
 
 .te-container, .te-container *,
 .te-emoji-picker, .te-emoji-picker *,
-.te-modal, .te-modal * {
+.te-modal, .te-modal *,
+.te-floating-toolbar, .te-floating-toolbar * {
   box-sizing: border-box;
 }
 
@@ -616,4 +619,49 @@
 
 .te-modal-btn-confirm:active {
   transform: translateY(0);
+}
+
+
+/* Floating Toolbar */
+.te-floating-toolbar {
+  background: var(--te-bg-editor);
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-md);
+  padding: 4px;
+  box-shadow: var(--te-shadow-lg);
+  display: flex;
+  gap: 2px;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease;
+}
+
+.te-floating-toolbar.te-floating-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.te-floating-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--te-radius-sm);
+  color: var(--te-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.te-floating-btn:hover {
+  background: var(--te-btn-hover);
+  color: var(--te-text-main);
+}
+
+.te-floating-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
 }

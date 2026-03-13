@@ -4,5 +4,5 @@ export const clearFormatting: ToolbarItem = {
   type: 'button',
   title: 'Clear Formatting',
   command: 'removeFormat',
-  icon: '<svg viewBox="0 0 24 24"><path d="M17.41 15.41L12 10l-5.41 5.41L5.17 14l5.41-5.41L5.17 3.17 6.59 1.76 12 7.17l5.41-5.41 1.41 1.41-5.41 5.41 5.41 5.41-1.41 1.42z"></path></svg>'
+  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg>'
 };

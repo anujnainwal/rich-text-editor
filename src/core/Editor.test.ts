@@ -120,4 +120,32 @@ describe('CoreEditor', () => {
     // Should still only be one span
     expect((editor.getHTML().match(/<span/g) || []).length).toBe(1);
   });
+
+  it('should intelligently link web URLs and email addresses', () => {
+    editor.setHTML('<p>Inquire at hello@example.com or visit example.com</p>');
+    
+    // Test email
+    const sel = window.getSelection();
+    const range = document.createRange();
+    const p = editor.el.querySelector('p')!;
+    const textNode = p.firstChild!;
+    
+    // Select "hello@example.com"
+    range.setStart(textNode, 11);
+    range.setEnd(textNode, 28);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    
+    editor.createLink('hello@example.com');
+    expect(document.execCommand).toHaveBeenCalledWith('createLink', false, 'mailto:hello@example.com');
+    
+    // Test web URL
+    range.setStart(p.lastChild!, 11); // "example.com"
+    range.setEnd(p.lastChild!, 22);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    
+    editor.createLink('example.com');
+    expect(document.execCommand).toHaveBeenCalledWith('createLink', false, 'https://example.com');
+  });
 });
