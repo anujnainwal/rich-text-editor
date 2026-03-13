@@ -171,9 +171,7 @@ export class Toolbar {
         return;
       }
 
-      if (item.command === 'insertTable') {
-        return;
-      }
+
 
       if (['addRow', 'deleteRow', 'addColumn', 'deleteColumn'].includes(item.command || '')) {
         const cmd = item.command as 'addRow' | 'deleteRow' | 'addColumn' | 'deleteColumn';
@@ -224,8 +222,8 @@ export class Toolbar {
         this.activeModal = new InputModal(
           'Insert Table',
           [
-            { id: 'rows', label: 'Rows', type: 'number', defaultValue: '3' },
-            { id: 'cols', label: 'Columns', type: 'number', defaultValue: '3' }
+            { id: 'rows', label: 'Rows', type: 'number', defaultValue: '3', min: '1' },
+            { id: 'cols', label: 'Columns', type: 'number', defaultValue: '3', min: '1' }
           ],
           (values) => {
             if (this.savedRange) {
@@ -235,7 +233,13 @@ export class Toolbar {
                 selection.addRange(this.savedRange);
               }
             }
-            this.editor.insertTable(parseInt(values.rows, 10), parseInt(values.cols, 10));
+            
+            let r = parseInt(values.rows, 10);
+            let c = parseInt(values.cols, 10);
+            if (isNaN(r) || r < 1) r = 1;
+            if (isNaN(c) || c < 1) c = 1;
+
+            this.editor.insertTable(r, c);
             this.savedRange = null;
           },
           () => { 
@@ -416,6 +420,8 @@ export class Toolbar {
     this.items.forEach((item) => {
       if (item.type === 'button') {
         const button = buttons[btnIndex++] as HTMLElement;
+        if (!button) return;
+
         if (item.command && document.queryCommandState(item.command)) {
           button.classList.add('active');
         } else {

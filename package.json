@@ -29,6 +29,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^25.3.5",
     "@vitest/browser": "^4.0.18",
@@ -62,5 +63,8 @@
   "bugs": {
     "url": "https://github.com/anujnainwal/rich-text-editor/issues"
   },
-  "homepage": "https://github.com/anujnainwal/rich-text-editor#readme"
+  "homepage": "https://github.com/anujnainwal/rich-text-editor#readme",
+  "dependencies": {
+    "dompurify": "^3.3.3"
+  }
 }

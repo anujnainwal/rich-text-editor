@@ -6,6 +6,8 @@ export interface ModalField {
   type: 'text' | 'number';
   placeholder?: string;
   defaultValue?: string;
+  min?: string;
+  max?: string;
 }
 
 export class InputModal {
@@ -48,7 +50,7 @@ export class InputModal {
     const fieldsHtml = fields.map(f => `
       <div class="te-modal-field">
         <label for="${f.id}">${f.label}</label>
-        <input type="${f.type}" id="${f.id}" class="te-modal-input" placeholder="${f.placeholder || ''}" value="${f.defaultValue || ''}">
+        <input type="${f.type}" id="${f.id}" class="te-modal-input" placeholder="${f.placeholder || ''}" value="${f.defaultValue || ''}" ${f.min ? `min="${f.min}"` : ''} ${f.max ? `max="${f.max}"` : ''}>
       </div>
     `).join('');
 

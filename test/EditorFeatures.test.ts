@@ -72,9 +72,9 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
 
       editor.el.dispatchEvent(pasteEvent);
 
-      // It should NOT prevent default and NOT call insertHTML for standard text
-      expect(preventDefaultSpy).not.toHaveBeenCalled();
-      expect(editor.execute).not.toHaveBeenCalled();
+      // It SHOULD prevent default and call insertText for standard text
+      expect(preventDefaultSpy).toHaveBeenCalled();
+      expect(editor.execute).toHaveBeenCalledWith('insertText', 'Just normal text');
     });
   });
 
@@ -95,6 +95,7 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
       const pasteEvent = new Event('paste') as any;
       pasteEvent.preventDefault = preventDefaultSpy;
       pasteEvent.clipboardData = {
+        getData: vi.fn().mockReturnValue(''),
         items: [
           {
             type: 'image/png',

@@ -2,6 +2,7 @@ import { SelectionManager } from './SelectionManager';
 import { ImageManager } from './ImageManager';
 import { HistoryManager } from './HistoryManager';
 import { FloatingToolbar } from '../ui/toolbar/FloatingToolbar';
+import DOMPurify from 'dompurify';
 
 export interface ThemeConfig {
   primaryColor?: string;
@@ -369,56 +370,8 @@ export class CoreEditor {
       }
     });
 
-    // Handle paste events for images
-    this.addEventListener(this.editableElement, 'paste', (e: ClipboardEvent) => {
-      const clipboardData = e.clipboardData;
-      if (!clipboardData) return;
-
-      if (clipboardData.items) {
-        for (let i = 0; i < clipboardData.items.length; i++) {
-          const item = clipboardData.items[i];
-          if (item.type.startsWith('image/')) {
-            const file = item.getAsFile();
-            if (file) {
-              e.preventDefault(); // Stop default pasting of image/html
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                const url = event.target?.result as string;
-                this.insertImage(url);
-              };
-              reader.readAsDataURL(file);
-              return; // handled
-            }
-          }
-        }
-      }
-
-      // 2. Auto-format pasted raw HTML strings (if it contains block/inline tags)
-      // If the clipboard has plain text that looks like HTML code, parse it.
-      // We avoid touching it if the clipboard mainly has text/html rendering, 
-      // UNLESS the user copied raw html code which comes in as text/plain.
-      const plainText = clipboardData.getData('text/plain');
-
-      // Basic heuristic: string starts with a common tag or contains paired tags
-      const isHtmlString = /<([a-z1-6]+)\b[^>]*>[\s\S]*<\/\1>/i.test(plainText) || /^\s*<[a-z1-6]+\b[^>]*>/i.test(plainText);
-
-      if (plainText && isHtmlString) {
-        // Clean the HTML string to remove newlines and excessive whitespace between tags
-        const cleanedHtml = plainText
-          .replace(/(\r\n|\n|\r)/gm, " ") // Remove all newlines
-          .replace(/>\s+</g, "><")         // Remove any remaining spaces between tags
-          .trim();
-
-        e.preventDefault();
-        this.execute('insertHTML', cleanedHtml);
-        return;
-      }
-
-      // 3. We no longer intercept text/html completely because the MutationObserver
-      // will catch any raw <img> tags that the browser successfully pastes and 
-      // automatically wrap them in our resizer containers. 
-      // This is much safer than trying to parse clipboard HTML manually and breaking text formatting.
-    });
+    // Handle paste events to sanitize inherited malware and styles
+    this.addEventListener(this.editableElement, 'paste', this.handlePaste.bind(this));
 
     // Handle input for history and auto-save
     this.addEventListener(this.editableElement, 'input', () => {
@@ -902,6 +855,13 @@ export class CoreEditor {
    */
   createLink(url: string): void {
     this.focus();
+    
+    // Security check: strictly block malicious URI schemes
+    url = url.trim();
+    if (/^(javascript|vbscript|data|file):/i.test(url)) {
+      console.warn('Security Warning: Blocked malicious URI scheme.');
+      return;
+    }
 
     // Check if it's an email address
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -1172,11 +1132,63 @@ export class CoreEditor {
     return container.innerHTML;
   }
 
+  // Handle paste events to sanitize inherited malware and styles
+  private handlePaste(e: ClipboardEvent): void {
+    e.preventDefault();
+    
+    let text = (e.clipboardData || (window as any).clipboardData).getData('text/plain');
+    let html = (e.clipboardData || (window as any).clipboardData).getData('text/html');
+
+    // First, check for image files in clipboard items
+    if (e.clipboardData && e.clipboardData.items) {
+      for (let i = 0; i < e.clipboardData.items.length; i++) {
+        const item = e.clipboardData.items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const url = event.target?.result as string;
+              this.insertImage(url);
+            };
+            reader.readAsDataURL(file);
+            return; // Handled as image, stop further processing
+          }
+        }
+      }
+    }
+
+    // Auto-format pasted raw HTML strings if it's plain text code
+    const isHtmlString = /<([a-z1-6]+)\b[^>]*>[\s\S]*<\/\1>/i.test(text) || /^\s*<[a-z1-6]+\b[^>]*>/i.test(text);
+    if (!html && text && isHtmlString) {
+      html = text.replace(/(\r\n|\n|\r)/gm, " ").replace(/>\s+</g, "><").trim();
+    }
+
+    // If no image files, process HTML or plain text
+    if (html) {
+      // Sanitize the HTML before inserting
+      const safeHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'color', 'background-color', 'class', 'id', 'target', 'rel'],
+        ALLOW_DATA_ATTR: true
+      });
+      this.execute('insertHTML', safeHTML);
+    } else {
+      // Just plain text
+      this.execute('insertText', text);
+    }
+  }
+
   /**
    * Sets the HTML content of the editor.
    */
   setHTML(html: string): void {
-    this.editableElement.innerHTML = html;
+    const safeHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'color', 'background-color', 'class', 'id', 'target', 'rel'],
+        ALLOW_DATA_ATTR: true
+    });
+    this.editableElement.innerHTML = safeHTML;
   }
 
   /**
