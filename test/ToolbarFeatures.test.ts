@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from '../src/core/Editor';
 import { Toolbar } from '../src/ui/Toolbar';
 
@@ -32,28 +32,28 @@ describe('Toolbar New Features', () => {
     document.body.innerHTML = '<div id="editor"></div>';
     editorContainer = document.getElementById('editor')!;
     editor = new CoreEditor(editorContainer);
-    // Mock Editor setStyle
-    editor.setStyle = vi.fn();
-    editor.insertImage = vi.fn();
     
     toolbar = new Toolbar(editor);
     document.body.appendChild(toolbar.el);
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('Line Height', () => {
     it('should set line height when changing the select dropdown', () => {
-      // Find the select dropdown with title "Line Height"
       const selects = toolbar.el.querySelectorAll('select.te-select');
       const lineHeightSelect = Array.from(selects).find(s => (s as HTMLSelectElement).title === 'Line Height') as HTMLSelectElement;
       
       expect(lineHeightSelect).toBeDefined();
 
-      // Trigger change
+      const spy = vi.spyOn(editor, 'setStyle');
       lineHeightSelect.value = '1.5';
       lineHeightSelect.dispatchEvent(new Event('change'));
 
-      expect(editor.setStyle).toHaveBeenCalledWith('line-height', '1.5');
+      expect(spy).toHaveBeenCalledWith('line-height', '1.5');
     });
   });
 
@@ -64,10 +64,11 @@ describe('Toolbar New Features', () => {
       
       expect(colorInput).toBeDefined();
 
+      const spy = vi.spyOn(editor, 'setStyle');
       colorInput.value = '#ff0000';
       colorInput.dispatchEvent(new Event('change'));
 
-      expect(document.execCommand).toHaveBeenCalledWith('foreColor', false, '#ff0000');
+      expect(spy).toHaveBeenCalledWith('color', '#ff0000', undefined);
     });
 
     it('should set highlight color when changing the input', () => {
@@ -76,10 +77,11 @@ describe('Toolbar New Features', () => {
       
       expect(bgColorInput).toBeDefined();
 
+      const spy = vi.spyOn(editor, 'setStyle');
       bgColorInput.value = '#00ff00';
       bgColorInput.dispatchEvent(new Event('change'));
 
-      expect(document.execCommand).toHaveBeenCalledWith('backColor', false, '#00ff00');
+      expect(spy).toHaveBeenCalledWith('background-color', '#00ff00', undefined);
     });
   });
 
@@ -90,25 +92,21 @@ describe('Toolbar New Features', () => {
       
       expect(imageBtn).toBeDefined();
 
-      // Spy on appendChild to catch the hidden input creation
       const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+      const insertImageSpy = vi.spyOn(editor, 'insertImage');
       
-      // Trigger click
       imageBtn.dispatchEvent(new Event('mousedown'));
 
-      // It should append an input of type file
       const appendedElement = appendChildSpy.mock.calls.find(call => 
         call[0] instanceof HTMLInputElement && call[0].type === 'file'
       )?.[0] as HTMLInputElement;
 
       expect(appendedElement).toBeDefined();
-      expect(appendedElement.type).toBe('file');
 
-      // Now trigger the file input change event to simulate upload
       class MockFileReader {
         onload: any;
         readAsDataURL() {
-          if (this.onload) this.onload({ target: { result: 'data:image/jpeg;base64,mock2' } });
+          if (this.onload) this.onload({ target: { result: 'data:image/jpeg;base64,mock' } });
         }
       }
       global.FileReader = MockFileReader as any;
@@ -119,7 +117,7 @@ describe('Toolbar New Features', () => {
 
       appendedElement.dispatchEvent(new Event('change'));
 
-      expect(editor.insertImage).toHaveBeenCalledWith('data:image/jpeg;base64,mock2');
+      expect(insertImageSpy).toHaveBeenCalledWith('data:image/jpeg;base64,mock');
     });
   });
 });

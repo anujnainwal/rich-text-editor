@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from '../src/core/Editor';
 
 describe('Table Support', () => {
@@ -33,13 +33,19 @@ describe('Table Support', () => {
     document.body.appendChild(container);
     editor = new CoreEditor(container);
     
-    // Set up initial selection to dynamic insertion can work
+    // Set up initial selection so dynamic insertion can work
     const range = document.createRange();
-    range.setStart(editor.el.firstChild || editor.el, 0);
+    range.setStart(editor.el, 0);
     range.collapse(true);
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    vi.restoreAllMocks();
   });
 
   it('should insert a table with specified dimensions', () => {
@@ -51,20 +57,10 @@ describe('Table Support', () => {
     expect(table?.querySelectorAll('td').length).toBe(8);
   });
 
-  it('should have editable cells', () => {
-    editor.insertTable(1, 1);
-    const td = container.querySelector('td');
-    expect(td).toBeTruthy();
-    // In our implementation, we rely on the table being inside a contenteditable parent
-    // or the cells themselves being editable if needed. 
-    // Since the whole editor is contenteditable, table cells should be as well.
-  });
-
   it('should add a row to the table', () => {
     editor.insertTable(1, 1);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    // Select the first cell
     const td = table.querySelector('td')!;
     const range = document.createRange();
     range.selectNodeContents(td);
@@ -79,7 +75,6 @@ describe('Table Support', () => {
     editor.insertTable(2, 1);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    // Select the first cell
     const td = table.querySelector('td')!;
     const range = document.createRange();
     range.selectNodeContents(td);
@@ -94,7 +89,6 @@ describe('Table Support', () => {
     editor.insertTable(1, 1);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    // Select the first cell
     const td = table.querySelector('td')!;
     const range = document.createRange();
     range.selectNodeContents(td);
@@ -109,7 +103,6 @@ describe('Table Support', () => {
     editor.insertTable(1, 2);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    // Select the first cell
     const td = table.querySelector('td')!;
     const range = document.createRange();
     range.selectNodeContents(td);

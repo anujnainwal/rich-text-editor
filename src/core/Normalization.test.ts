@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from './Editor';
 
 describe('HTML Normalization', () => {
+  let container: HTMLElement;
+  let editor: CoreEditor;
+
   beforeAll(() => {
     document.execCommand = vi.fn();
     
@@ -22,13 +25,15 @@ describe('HTML Normalization', () => {
     window.getSelection = vi.fn().mockReturnValue(mockSelection);
   });
 
-  let container: HTMLElement;
-  let editor: CoreEditor;
-
   beforeEach(() => {
     document.body.innerHTML = '<div id="editor"></div>';
     container = document.getElementById('editor')!;
     editor = new CoreEditor(container);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should lift lists out of paragraphs', () => {
@@ -40,7 +45,6 @@ describe('HTML Normalization', () => {
   it('should lift lists and keep preceding text', () => {
     const mixedHTML = '<p>Preceding text<ul><li>Item 1</li></ul></p>';
     editor.setHTML(mixedHTML);
-    // The paragraph should stay because it has text, but the list should be moved out
     expect(editor.getHTML()).toBe('<p>Preceding text</p><ul><li>Item 1</li></ul>');
   });
 
@@ -70,7 +74,6 @@ describe('HTML Normalization', () => {
 
   it('should remove is-empty class when a list is present', () => {
     editor.setHTML('<ul><li>Item</li></ul>');
-    // Forcing checkPlaceholder call if it's internal
     (editor as any).checkPlaceholder(); 
     expect(editor.el.classList.contains('is-empty')).toBe(false);
   });

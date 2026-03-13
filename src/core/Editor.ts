@@ -49,6 +49,7 @@ export class CoreEditor {
   private pendingStyles: Record<string, string> = {};
   private observer: MutationObserver | null = null;
   private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
+  private isUndoingRedoing: boolean = false;
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
     this.options = options;
@@ -79,6 +80,7 @@ export class CoreEditor {
     this.history = new HistoryManager(this.editableElement.innerHTML);
 
     this.setupInputHandlers();
+    this.setupLinkClickHandlers();
     this.setupImageObserver();
     this.checkPlaceholder();
 
@@ -423,7 +425,23 @@ export class CoreEditor {
     });
   }
 
+  /**
+   * Immediately records a history state if one is pending.
+   */
+  private flushHistoryRecord(): void {
+    if (this.historyTimeout) {
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = null;
+      
+      const html = this.editableElement.innerHTML;
+      const path = this.selection.getSelectionPath(this.editableElement);
+      this.history.record(html, path);
+    }
+  }
+
   private handleInput(): void {
+    if (this.isUndoingRedoing) return;
+
     this.scheduleHistoryRecord();
 
     if (this.options.autoSave) {
@@ -444,12 +462,12 @@ export class CoreEditor {
       const html = this.editableElement.innerHTML;
       const path = this.selection.getSelectionPath(this.editableElement);
       this.history.record(html, path);
-    }, 500); // Record after 500ms of inactivity
+    }, 200); // Record after 200ms of inactivity
   }
 
   private scheduleAutoSave(): void {
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    const interval = this.options.autoSaveInterval || 1000;
+    const interval = this.options.autoSaveInterval || 300;
     this.saveTimeout = setTimeout(() => {
       this.save();
     }, interval);
@@ -462,24 +480,30 @@ export class CoreEditor {
   }
 
   public undo(): void {
+    this.flushHistoryRecord();
     const state = this.history.undo();
     if (state !== null) {
+      this.isUndoingRedoing = true;
       this.editableElement.innerHTML = state.html;
       if (state.selection) {
         this.selection.restoreSelectionPath(this.editableElement, state.selection);
       }
       this.triggerChange();
+      this.isUndoingRedoing = false;
     }
   }
 
   public redo(): void {
+    this.flushHistoryRecord();
     const state = this.history.redo();
     if (state !== null) {
+      this.isUndoingRedoing = true;
       this.editableElement.innerHTML = state.html;
       if (state.selection) {
         this.selection.restoreSelectionPath(this.editableElement, state.selection);
       }
       this.triggerChange();
+      this.isUndoingRedoing = false;
     }
   }
 
@@ -528,11 +552,37 @@ export class CoreEditor {
     // However, for standard commands, execCommand is still the easiest path for undo/redo.
     document.execCommand(command, false, value ?? undefined);
 
-    // Dispatch an input event to notify listeners of changes
-    this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+    // Special handling for clear formatting to also reset block blocks
+    if (command === 'removeFormat') {
+      document.execCommand('formatBlock', false, 'p');
+      
+      // Also clear pending styles
+      this.pendingStyles = {};
+    }
 
     // Normalize HTML after execution to fix any invalid nesting (like lists inside paragraphs)
     this.normalize();
+
+    // Dispatch an input event to notify listeners of changes
+    this.triggerChange();
+  }
+
+  /**
+   * Special handler for links to open them in a new tab when clicked.
+   */
+  private setupLinkClickHandlers(): void {
+    this.addEventListener(this.editableElement, 'click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      
+      if (anchor && this.editableElement.contains(anchor)) {
+        e.preventDefault();
+        const url = anchor.getAttribute('href');
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }
+    });
   }
 
   /**
@@ -844,10 +894,26 @@ export class CoreEditor {
     }
 
     // Use execCommand to create the link initially
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // If selection is collapsed (no text selected), insert the URL as text first
+      if (range.collapsed) {
+        const textNode = document.createTextNode(url);
+        range.insertNode(textNode);
+        
+        // Select the newly inserted text
+        const newRange = document.createRange();
+        newRange.selectNodeContents(textNode);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }
+
     document.execCommand('createLink', false, url);
 
     // Find the newly created anchor tag and add target="_blank"
-    const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       let container = range.commonAncestorContainer as HTMLElement;
@@ -980,17 +1046,21 @@ export class CoreEditor {
     }
   }
 
+  private normalizationContainer: HTMLElement | null = null;
+
   /**
    * Optimizes HTML by fixing invalid nesting and removing redundant tags.
    */
   private normalizeHTML(html: string): string {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const body = doc.body;
-
+    if (!this.normalizationContainer) {
+      this.normalizationContainer = document.createElement('div');
+    }
+    
+    const container = this.normalizationContainer;
+    container.innerHTML = html;
+    
     // 0. Wrap top-level text nodes and inline elements in <p>
-    // This ensures consistent paragraph spacing (margins)
-    const rootNodes = Array.from(body.childNodes);
+    const rootNodes = Array.from(container.childNodes);
     let currentParagraph: HTMLElement | null = null;
 
     rootNodes.forEach(node => {
@@ -1006,7 +1076,7 @@ export class CoreEditor {
         }
 
         if (!currentParagraph) {
-          currentParagraph = doc.createElement('p');
+          currentParagraph = document.createElement('p');
           node.before(currentParagraph);
         }
         currentParagraph.appendChild(node);
@@ -1016,7 +1086,7 @@ export class CoreEditor {
     });
 
     // 1. Fix list nesting: lift <ul> and <ol> out of <p>
-    const paras = body.querySelectorAll('p');
+    const paras = container.querySelectorAll('p');
     paras.forEach(p => {
       const lists = p.querySelectorAll('ul, ol');
       if (lists.length > 0) {
@@ -1032,12 +1102,12 @@ export class CoreEditor {
     });
 
     // 2. Remove redundant spans (those without attributes or empty)
-    body.querySelectorAll('span').forEach(span => {
+    container.querySelectorAll('span').forEach(span => {
       // QA FIX: Do not remove selection markers
       if (span.id.startsWith('te-selection-')) return;
 
       if (span.attributes.length === 0) {
-        const text = doc.createTextNode(span.textContent || '');
+        const text = document.createTextNode(span.textContent || '');
         span.replaceWith(text);
       } else if (span.innerHTML.trim() === '') {
         span.remove();
@@ -1049,11 +1119,11 @@ export class CoreEditor {
 
     // 4. Remove empty paragraphs (except if it's the only one or has a BR)
     // CRITICAL: We also want to trim trailing empty paragraphs from the output
-    const allParas = Array.from(body.querySelectorAll('p'));
+    const allParas = Array.from(container.querySelectorAll('p'));
     
     // First remove empty ones in the middle
     allParas.forEach(p => {
-      if (p.innerHTML.trim() === '' && body.childNodes.length > 1 && p !== body.lastElementChild) {
+      if (p.innerHTML.trim() === '' && container.childNodes.length > 1 && p !== container.lastElementChild) {
         p.remove();
       }
     });
@@ -1062,9 +1132,9 @@ export class CoreEditor {
     for (let i = allParas.length - 1; i >= 0; i--) {
       const p = allParas[i];
       const isEmpty = p.innerHTML.trim() === '' || p.innerHTML.trim() === '<br>';
-      const isLast = p === body.lastElementChild;
+      const isLast = p === container.lastElementChild;
       
-      if (isEmpty && isLast && body.children.length > 1) {
+      if (isEmpty && isLast && container.children.length > 1) {
         p.remove();
       } else {
         break;
@@ -1072,11 +1142,11 @@ export class CoreEditor {
     }
 
     // 5. Final check: if the output is just an empty paragraph, return empty string
-    if (body.innerHTML.trim() === '<p><br></p>' || body.innerHTML.trim() === '<p></p>') {
+    if (container.innerHTML.trim() === '<p><br></p>' || container.innerHTML.trim() === '<p></p>') {
       return '';
     }
 
-    return body.innerHTML;
+    return container.innerHTML;
   }
 
   /**

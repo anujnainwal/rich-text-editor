@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from './Editor';
 
 describe('CoreEditor - 30 Font Size Test Cases', () => {
@@ -14,8 +14,8 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
       _ranges: [] as Range[],
       getRangeAt(index: number) { return this._ranges[index]; },
       addRange(range: Range) { 
-        this._ranges = [range]; 
-        this.rangeCount = 1;
+        this._ranges.push(range); 
+        this.rangeCount = this._ranges.length;
       },
       removeAllRanges() { 
         this._ranges = []; 
@@ -30,6 +30,11 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
     container = document.getElementById('editor')!;
     editor = new CoreEditor(container);
     mockSelection.removeAllRanges();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   const setSelection = (startNode: Node, startOffset: number, endNode: Node | number, endOffset?: number) => {
@@ -42,7 +47,14 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
       actualEndOffset = endNode;
     } else {
       actualEndNode = endNode;
-      actualEndOffset = endOffset === undefined ? 0 : endOffset;
+    }
+
+    if (endOffset !== undefined) {
+        actualEndOffset = endOffset;
+    } else if (typeof endNode === 'number') {
+        actualEndOffset = endNode;
+    } else {
+        actualEndOffset = 0;
     }
 
     range.setStart(startNode, startOffset || 0);

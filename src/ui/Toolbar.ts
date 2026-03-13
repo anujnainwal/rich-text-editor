@@ -2,6 +2,7 @@ import { CoreEditor } from '../core/Editor';
 import { ToolbarItem } from './toolbar/ToolbarItem';
 import { toolbarItems } from './toolbar/registry';
 import { EmojiPicker } from './toolbar/EmojiPicker';
+import { InputModal } from './toolbar/InputModal';
 
 export class Toolbar {
   private editor: CoreEditor;
@@ -9,6 +10,7 @@ export class Toolbar {
   private savedRange: Range | null = null;
   private items: ToolbarItem[] = toolbarItems;
   private activePicker: EmojiPicker | null = null;
+  private activeModal: InputModal | null = null;
   private statusEl: HTMLElement | null = null;
   private boundUpdateActiveStates: () => void;
 
@@ -105,6 +107,17 @@ export class Toolbar {
 
     button.addEventListener('mousedown', (e) => {
       e.preventDefault();
+
+      if (item.command === 'createLink' || item.command === 'insertTable') {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          if (this.editor.el.contains(range.commonAncestorContainer)) {
+            this.savedRange = range.cloneRange();
+          }
+        }
+      }
+
       if (item.command === 'insertEmoji') {
         if (!this.activePicker) {
           this.activePicker = new EmojiPicker(
@@ -122,13 +135,6 @@ export class Toolbar {
         return;
       }
 
-      if (item.command === 'createLink') {
-        const url = window.prompt('Enter the URL');
-        if (url) {
-          this.editor.createLink(url);
-        }
-        return;
-      }
       if (item.command === 'insertImage') {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -166,17 +172,80 @@ export class Toolbar {
       }
 
       if (item.command === 'insertTable') {
-        const rows = window.prompt('Enter number of rows', '3');
-        const cols = window.prompt('Enter number of columns', '3');
-        if (rows && cols) {
-          this.editor.insertTable(parseInt(rows, 10), parseInt(cols, 10));
-        }
         return;
       }
 
       if (['addRow', 'deleteRow', 'addColumn', 'deleteColumn'].includes(item.command || '')) {
         const cmd = item.command as 'addRow' | 'deleteRow' | 'addColumn' | 'deleteColumn';
         this.editor[cmd]();
+        return;
+      }
+
+      if (item.command === 'undo') {
+        this.editor.undo();
+        return;
+      }
+      if (item.command === 'redo') {
+        this.editor.redo();
+        return;
+      }
+
+      if (item.command === 'createLink') {
+        if (this.activeModal) this.activeModal.close();
+        
+        this.activeModal = new InputModal(
+          'Insert Link',
+          [{ id: 'url', label: 'URL', type: 'text', placeholder: 'https://example.com' }],
+          (values) => {
+            if (this.savedRange) {
+              const selection = window.getSelection();
+              if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(this.savedRange);
+              }
+            }
+            this.editor.createLink(values.url);
+            this.savedRange = null;
+          },
+          () => { 
+            this.activeModal = null;
+            this.savedRange = null;
+          },
+          this.editor.getOptions().theme,
+          this.editor.getOptions().dark
+        );
+        this.activeModal.show(button);
+        return;
+      }
+
+      if (item.command === 'insertTable') {
+        if (this.activeModal) this.activeModal.close();
+
+        this.activeModal = new InputModal(
+          'Insert Table',
+          [
+            { id: 'rows', label: 'Rows', type: 'number', defaultValue: '3' },
+            { id: 'cols', label: 'Columns', type: 'number', defaultValue: '3' }
+          ],
+          (values) => {
+            if (this.savedRange) {
+              const selection = window.getSelection();
+              if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(this.savedRange);
+              }
+            }
+            this.editor.insertTable(parseInt(values.rows, 10), parseInt(values.cols, 10));
+            this.savedRange = null;
+          },
+          () => { 
+            this.activeModal = null;
+            this.savedRange = null;
+          },
+          this.editor.getOptions().theme,
+          this.editor.getOptions().dark
+        );
+        this.activeModal.show(button);
         return;
       }
 
@@ -319,7 +388,14 @@ export class Toolbar {
       if (this.savedRange) {
         this.editor.selection.restoreSelection(this.savedRange);
       }
-      if (item.command) {
+      
+      if (item.command === 'foreColor') {
+        const range = this.savedRange || undefined;
+        this.editor.setStyle('color', input.value, range);
+      } else if (item.command === 'backColor') {
+        const range = this.savedRange || undefined;
+        this.editor.setStyle('background-color', input.value, range);
+      } else if (item.command) {
         this.editor.execute(item.command, input.value);
       }
       this.editor.focus();

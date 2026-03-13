@@ -1,12 +1,16 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from './Editor';
 
 describe('CoreEditor', () => {
+  let mockSelection: any;
+  let container: HTMLElement;
+  let editor: CoreEditor;
+
   beforeAll(() => {
     document.execCommand = vi.fn();
     
     // Improved Selection/Range mock for JSDOM
-    const mockSelection = {
+    mockSelection = {
       rangeCount: 0,
       _ranges: [] as Range[],
       getRangeAt(index: number) { return this._ranges[index]; },
@@ -23,16 +27,24 @@ describe('CoreEditor', () => {
     window.getSelection = vi.fn().mockReturnValue(mockSelection);
   });
 
-  let container: HTMLElement;
-  let editor: CoreEditor;
-
   beforeEach(() => {
     document.body.innerHTML = '<div id="editor"></div>';
     container = document.getElementById('editor')!;
     editor = new CoreEditor(container);
+    mockSelection.removeAllRanges();
+    vi.clearAllMocks();
   });
 
-  it('should initialize with default content', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should initialize correctly', () => {
+    expect(editor).toBeDefined();
     expect(editor.getHTML()).toBe('');
   });
 
