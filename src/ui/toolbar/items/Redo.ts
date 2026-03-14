@@ -4,5 +4,5 @@ export const redo: ToolbarItem = {
   type: 'button',
   title: 'Redo',
   command: 'redo',
-  icon: '<svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"></path><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>'
+  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>'
 };

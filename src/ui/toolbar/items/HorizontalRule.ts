@@ -4,5 +4,5 @@ export const horizontalRule: ToolbarItem = {
   type: 'button',
   title: 'Horizontal Rule',
   command: 'insertHorizontalRule',
-  icon: '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
 };

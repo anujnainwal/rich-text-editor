@@ -37,6 +37,7 @@ export interface EditorOptions {
   autoSaveInterval?: number; // ms, default 1000
   autoSave?: boolean; // default false
   showStatus?: boolean; // default true
+  showLoader?: boolean; // default true
   toolbarItems?: string[]; // IDs of tools to show
   imageEndpoints?: { 
     upload: string; 
@@ -63,6 +64,7 @@ export class CoreEditor {
   private observer: MutationObserver | null = null;
   private floatingToolbar: FloatingToolbar | null = null;
   private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
+  private loaderElement: HTMLElement | null = null;
   private isUndoingRedoing: boolean = false;
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
@@ -85,6 +87,12 @@ export class CoreEditor {
     if (this.options.dark) {
       this.container.classList.add('te-dark');
     }
+
+    // Show loader if requested
+    if (this.options.showLoader !== false) {
+      this.createLoader();
+    }
+
     // Create the contenteditable area first
     this.editableElement = this.createEditableElement();
 
@@ -121,6 +129,11 @@ export class CoreEditor {
     this.floatingToolbar = new FloatingToolbar(this);
     if (this.options.dark) {
       this.floatingToolbar.setDarkMode(true);
+    }
+
+    // Hide loader after a short delay to ensure initial layout is stable
+    if (this.options.showLoader !== false) {
+      setTimeout(() => this.hideLoader(), 300);
     }
   }
 
@@ -483,6 +496,39 @@ export class CoreEditor {
 
   protected triggerChange(): void {
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  private createLoader(): void {
+    this.loaderElement = document.createElement('div');
+    this.loaderElement.className = 'te-loader-overlay';
+    
+    const spinner = document.createElement('div');
+    spinner.className = 'te-loader-spinner';
+    
+    const shimmer = document.createElement('div');
+    shimmer.className = 'te-loader-shimmer';
+    
+    const text = document.createElement('div');
+    text.className = 'te-loader-text';
+    text.textContent = 'Initializing Editor...';
+    
+    this.loaderElement.appendChild(spinner);
+    this.loaderElement.appendChild(shimmer);
+    this.loaderElement.appendChild(text);
+    
+    this.container.appendChild(this.loaderElement);
+  }
+
+  private hideLoader(): void {
+    if (this.loaderElement) {
+      this.loaderElement.classList.add('hidden');
+      setTimeout(() => {
+        if (this.loaderElement && this.loaderElement.parentNode) {
+          this.loaderElement.parentNode.removeChild(this.loaderElement);
+        }
+        this.loaderElement = null;
+      }, 400); // Matches CSS transition duration
+    }
   }
 
   protected createEditableElement(): HTMLElement {

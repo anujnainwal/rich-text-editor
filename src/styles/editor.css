@@ -69,6 +69,7 @@
   color: var(--te-text-main) !important;
   transition: var(--te-transition);
   max-width: 100%;
+  position: relative; /* Ensure children like the loader are contained */
 }
 
 .te-container:focus-within {
@@ -704,4 +705,77 @@
   width: 18px;
   height: 18px;
   stroke: currentColor;
+}
+
+/* Editor Loader Overlay */
+.te-loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(241, 245, 249, 0.9); /* Darker Slate 100 with transparency */
+  backdrop-filter: blur(12px) saturate(200%);
+  -webkit-backdrop-filter: blur(12px) saturate(200%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
+  border-radius: var(--te-radius-lg);
+}
+
+.te-dark .te-loader-overlay {
+  background: rgba(15, 23, 42, 0.9); /* Darker Slate 900 with transparency */
+}
+
+.te-loader-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.te-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--te-border-color);
+  border-top-color: var(--te-primary-color);
+  border-radius: 50%;
+  animation: te-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.2));
+}
+
+.te-loader-shimmer {
+  width: 140px;
+  height: 4px;
+  background: var(--te-border-color);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.te-loader-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(99, 102, 241, 0) 0,
+    rgba(99, 102, 241, 0.4) 50%,
+    rgba(99, 102, 241, 0) 100%
+  );
+  animation: te-skeleton-pulse 1.5s infinite;
+}
+
+.te-loader-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--te-text-muted);
+  letter-spacing: 0.02em;
+  margin-top: 12px;
 }
