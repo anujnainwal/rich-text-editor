@@ -96,6 +96,9 @@ export class FloatingToolbar {
 
     this.editor.el.addEventListener('mouseup', update);
     this.editor.el.addEventListener('keyup', update);
+    this.editor.el.addEventListener('scroll', () => {
+      if (this.isVisible && !this.activeModal) this.hide();
+    }, true);
     
     // Hide on scroll or click outside
     window.addEventListener('mousedown', (e) => {
@@ -123,6 +126,8 @@ export class FloatingToolbar {
     }
 
     const rect = range.getBoundingClientRect();
+    const parent = this.container.offsetParent || document.documentElement;
+    const parentRect = parent.getBoundingClientRect();
     
     this.container.style.display = 'flex';
     this.isVisible = true;
@@ -130,18 +135,23 @@ export class FloatingToolbar {
     const toolbarWidth = this.container.offsetWidth;
     const toolbarHeight = this.container.offsetHeight;
 
-    let top = rect.top + window.scrollY - toolbarHeight - 10;
-    let left = rect.left + window.scrollX + (rect.width / 2) - (toolbarWidth / 2);
+    // Viewport-relative coordinates subtracted by parent coordinates gives the correct local style top/left.
+    // This accounts for body margins, paddings, and flex centering in index.html.
+    let top = rect.top - parentRect.top - toolbarHeight - 10;
+    let left = rect.left - parentRect.left + (rect.width / 2) - (toolbarWidth / 2);
 
-    // Boundary checks
-    if (top < window.scrollY) {
-      top = rect.bottom + window.scrollY + 10;
+    // Boundary checks relative to viewport
+    if (rect.top - toolbarHeight - 15 < 0) {
+      // Show below the selection if not enough space above
+      top = rect.bottom - parentRect.top + 10;
     }
     
-    if (left < 10) left = 10;
-    if (left + toolbarWidth > window.innerWidth - 10) {
-      left = window.innerWidth - toolbarWidth - 10;
-    }
+    // Horizontal boundary checks (relative to parent)
+    const minLeft = 10 - parentRect.left;
+    const maxLeft = (window.innerWidth - 10) - parentRect.left - toolbarWidth;
+    
+    if (left < minLeft) left = minLeft;
+    if (left > maxLeft) left = maxLeft;
 
     this.container.style.top = `${top}px`;
     this.container.style.left = `${left}px`;

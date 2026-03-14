@@ -1,6 +1,6 @@
 {
   "name": "@meenainwal/rich-text-editor",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
   "files": [

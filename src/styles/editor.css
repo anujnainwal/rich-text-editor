@@ -361,6 +361,11 @@
   color: var(--te-placeholder);
   pointer-events: none;
   position: absolute;
+  left: 24px;   /* Match .te-content padding */
+  right: 24px;  /* Match .te-content padding */
+  text-align: inherit;
+  white-space: pre-wrap;
+  overflow: hidden;
 }
 
 /* Image Support */

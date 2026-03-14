@@ -227,12 +227,23 @@ export class CoreEditor {
                     !this.editableElement.querySelector('img') &&
                     !this.editableElement.querySelector('table') &&
                     !this.editableElement.querySelector('ul') &&
-                    !this.editableElement.querySelector('ol');
+                    !this.editableElement.querySelector('ol') &&
+                    !this.editableElement.querySelector('hr') &&
+                    !this.editableElement.querySelector('figure') &&
+                    !this.editableElement.querySelector('blockquote') &&
+                    !this.editableElement.querySelector('pre');
     
     if (isEmpty) {
       this.editableElement.classList.add('is-empty');
+      
+      // Update alignment of placeholder to match current block alignment
+      const firstChild = this.editableElement.firstElementChild as HTMLElement;
+      if (firstChild) {
+        this.editableElement.style.textAlign = firstChild.style.textAlign;
+      }
     } else {
       this.editableElement.classList.remove('is-empty');
+      this.editableElement.style.textAlign = '';
     }
   }
 
@@ -1087,6 +1098,8 @@ export class CoreEditor {
       // Cleanup markers
       this.editableElement.querySelectorAll('#te-selection-start, #te-selection-end').forEach(el => el.remove());
     }
+
+    this.checkPlaceholder();
   }
 
   private normalizationContainer: HTMLElement | null = null;

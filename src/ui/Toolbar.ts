@@ -13,6 +13,7 @@ export class Toolbar {
   private activeModal: InputModal | null = null;
   private statusEl: HTMLElement | null = null;
   private boundUpdateActiveStates: () => void;
+  private itemElements: Map<ToolbarItem, HTMLElement> = new Map();
 
 
   constructor(editor: CoreEditor) {
@@ -106,6 +107,7 @@ export class Toolbar {
     // We insert it as HTML but ensure no user-provided strings are directly used.
     button.innerHTML = item.icon || '';
     button.title = item.title;
+    this.itemElements.set(item, button);
 
     button.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -361,7 +363,7 @@ export class Toolbar {
       indicator.classList.add('te-color-indicator');
       indicator.style.backgroundColor = item.value || '#000000';
       iconBtn.appendChild(indicator);
-
+      this.itemElements.set(item, iconBtn);
       wrapper.appendChild(iconBtn);
     }
 
@@ -412,18 +414,15 @@ export class Toolbar {
   }
 
   private updateActiveStates(): void {
-    const buttons = this.container.querySelectorAll('.te-button');
-    let btnIndex = 0;
-
     this.items.forEach((item) => {
-      if (item.type === 'button') {
-        const button = buttons[btnIndex++] as HTMLElement;
-        if (!button) return;
+      const element = this.itemElements.get(item);
+      if (!element) return;
 
+      if (item.type === 'button') {
         if (item.command && document.queryCommandState(item.command)) {
-          button.classList.add('active');
+          element.classList.add('active');
         } else {
-          button.classList.remove('active');
+          element.classList.remove('active');
         }
       }
     });
