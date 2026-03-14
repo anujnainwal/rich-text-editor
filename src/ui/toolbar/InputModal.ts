@@ -47,23 +47,55 @@ export class InputModal {
       el.classList.add('te-dark');
     }
 
-    const fieldsHtml = fields.map(f => `
-      <div class="te-modal-field">
-        <label for="${f.id}">${f.label}</label>
-        <input type="${f.type}" id="${f.id}" class="te-modal-input" placeholder="${f.placeholder || ''}" value="${f.defaultValue || ''}" ${f.min ? `min="${f.min}"` : ''} ${f.max ? `max="${f.max}"` : ''}>
-      </div>
-    `).join('');
+    // Modal Header
+    const header = document.createElement('div');
+    header.classList.add('te-modal-header');
+    header.textContent = title;
+    el.appendChild(header);
 
-    el.innerHTML = `
-      <div class="te-modal-header">${title}</div>
-      <div class="te-modal-body">
-        ${fieldsHtml}
-      </div>
-      <div class="te-modal-footer">
-        <button class="te-modal-btn te-modal-btn-cancel">Cancel</button>
-        <button class="te-modal-btn te-modal-btn-confirm">Insert</button>
-      </div>
-    `;
+    // Modal Body
+    const body = document.createElement('div');
+    body.classList.add('te-modal-body');
+    
+    fields.forEach(f => {
+      const fieldDiv = document.createElement('div');
+      fieldDiv.classList.add('te-modal-field');
+      
+      const label = document.createElement('label');
+      label.setAttribute('for', f.id);
+      label.textContent = f.label;
+      
+      const input = document.createElement('input');
+      input.type = f.type;
+      input.id = f.id;
+      input.classList.add('te-modal-input');
+      if (f.placeholder) input.placeholder = f.placeholder;
+      if (f.defaultValue) input.value = f.defaultValue;
+      if (f.min) input.min = f.min;
+      if (f.max) input.max = f.max;
+      
+      fieldDiv.appendChild(label);
+      fieldDiv.appendChild(input);
+      body.appendChild(fieldDiv);
+    });
+    el.appendChild(body);
+
+    // Modal Footer
+    const footer = document.createElement('div');
+    footer.classList.add('te-modal-footer');
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.classList.add('te-modal-btn', 'te-modal-btn-cancel');
+    cancelBtn.textContent = 'Cancel';
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.classList.add('te-modal-btn', 'te-modal-btn-confirm');
+    confirmBtn.textContent = 'Insert';
+    
+    footer.appendChild(cancelBtn);
+    footer.appendChild(confirmBtn);
+    el.appendChild(footer);
+
     return el;
   }
 

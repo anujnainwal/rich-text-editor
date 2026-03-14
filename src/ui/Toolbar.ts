@@ -102,6 +102,8 @@ export class Toolbar {
   private renderButton(item: ToolbarItem): void {
     const button = document.createElement('button');
     button.classList.add('te-button');
+    // Security: item.icon is a trusted internal SVG string.
+    // We insert it as HTML but ensure no user-provided strings are directly used.
     button.innerHTML = item.icon || '';
     button.title = item.title;
 
@@ -352,6 +354,7 @@ export class Toolbar {
     if (item.icon) {
       const iconBtn = document.createElement('div');
       iconBtn.classList.add('te-button', 'te-color-icon');
+      // Trusted icon string
       iconBtn.innerHTML = item.icon;
 
       const indicator = document.createElement('div');
@@ -429,7 +432,7 @@ export class Toolbar {
   public updateStatus(text: string, isLoading: boolean = false): void {
     if (!this.statusEl || this.editor.getOptions().showStatus === false) return;
 
-    this.statusEl.innerHTML = '';
+    this.statusEl.textContent = '';
 
     if (isLoading) {
       const loader = document.createElement('div');

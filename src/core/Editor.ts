@@ -1046,6 +1046,40 @@ export class CoreEditor {
   private normalizationContainer: HTMLElement | null = null;
 
   /**
+   * Internal helper to strictly sanitize HTML strings.
+   */
+  private sanitize(html: string): string {
+    // Add temporary hook to enforce security on all links
+    DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+      if (node.tagName === 'A') {
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+
+    const result = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+        'ul', 'ol', 'li', 'blockquote', 'hr', 
+        'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot',
+        'figure', 'figcaption'
+      ],
+      ALLOWED_ATTR: [
+        'href', 'src', 'alt', 'style', 'color', 'background-color', 
+        'class', 'id', 'target', 'rel', 'contenteditable', 'data-placeholder', 'data-image-id'
+      ],
+      ALLOW_DATA_ATTR: true,
+      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'textarea'],
+      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+    });
+
+    // Cleanup hook
+    DOMPurify.removeHook('afterSanitizeAttributes');
+    return result;
+  }
+
+  /**
    * Optimizes HTML by fixing invalid nesting and removing redundant tags.
    */
   private normalizeHTML(html: string): string {
@@ -1064,7 +1098,7 @@ export class CoreEditor {
       // Check if node is inline (text or inline element like span/b/i)
       const isInline = node.nodeType === Node.TEXT_NODE || 
                        (node.nodeType === Node.ELEMENT_NODE && 
-                        !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR'].includes((node as HTMLElement).tagName));
+                        !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'FIGURE'].includes((node as HTMLElement).tagName));
       
       if (isInline) {
         // Skip whitespace-only text nodes between blocks
@@ -1111,11 +1145,7 @@ export class CoreEditor {
       }
     });
 
-    // 3. Ensure every block is wrapped in <p> if it's top-level text (optional but good for consistency)
-    // For now, let's focus on cleaning up what's there.
-
-    // 4. Remove empty paragraphs (except if it's the only one or has a BR)
-    // CRITICAL: We also want to trim trailing empty paragraphs from the output
+    // 3. Remove empty paragraphs (except if it's the only one or has a BR)
     const allParas = Array.from(container.querySelectorAll('p'));
     
     // First remove empty ones in the middle
@@ -1138,12 +1168,13 @@ export class CoreEditor {
       }
     }
 
-    // 5. Final check: if the output is just an empty paragraph, return empty string
+    // 4. Final check: if the output is just an empty paragraph, return empty string
     if (container.innerHTML.trim() === '<p><br></p>' || container.innerHTML.trim() === '<p></p>') {
       return '';
     }
 
-    return container.innerHTML;
+    // CRITICAL SECURITY FIX: Sanitize the final normalized output
+    return this.sanitize(container.innerHTML);
   }
 
   // Handle paste events to sanitize inherited malware and styles
@@ -1178,11 +1209,7 @@ export class CoreEditor {
     // If no image files, process HTML or plain text
     if (html) {
       // Sanitize the HTML before inserting
-      const safeHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot'],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'color', 'background-color', 'class', 'id', 'target', 'rel'],
-        ALLOW_DATA_ATTR: true
-      });
+      const safeHTML = this.sanitize(html);
       this.execute('insertHTML', safeHTML);
     } else {
       // Just plain text
@@ -1194,11 +1221,7 @@ export class CoreEditor {
    * Sets the HTML content of the editor.
    */
   setHTML(html: string): void {
-    const safeHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot'],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'color', 'background-color', 'class', 'id', 'target', 'rel'],
-        ALLOW_DATA_ATTR: true
-    });
+    const safeHTML = this.sanitize(html);
     this.editableElement.innerHTML = safeHTML;
   }
 

@@ -26,14 +26,14 @@ export class EmojiPicker {
   }
 
   private async loadEmojis(): Promise<void> {
-    this.emojiGrid.innerHTML = '<div class="te-emoji-loading">Loading...</div>';
+    this.emojiGrid.textContent = 'Loading...';
     try {
       const { EMOJI_LIST } = await import('./EmojiList');
       this.emojiList = EMOJI_LIST;
       this.renderEmojis(this.emojiList);
     } catch (error) {
       console.error('Failed to load emojis:', error);
-      this.emojiGrid.innerHTML = '<div class="te-emoji-error">Failed to load</div>';
+      this.emojiGrid.textContent = 'Failed to load';
     }
   }
 
@@ -88,7 +88,7 @@ export class EmojiPicker {
     this.emojiGrid.innerHTML = '';
 
     if (emojis.length === 0) {
-      this.emojiGrid.innerHTML = '<div class="te-emoji-empty">No emoji found</div>';
+      this.emojiGrid.textContent = 'No emoji found';
       return;
     }
 

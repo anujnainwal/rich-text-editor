@@ -6,14 +6,14 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/inkflow-editor.cjs",
+  "main": "./dist/inkflow-editor.mjs",
   "module": "./dist/inkflow-editor.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/inkflow-editor.mjs",
-      "require": "./dist/inkflow-editor.cjs"
+      "default": "./dist/inkflow-editor.mjs"
     },
     "./style": {
       "types": "./dist/style.d.ts",
