@@ -193,11 +193,12 @@ If you see multiple toolbars or editors, it's likely because:
 
 ## 📝 Patch Notes
 
-### v1.2.0 (Image Management Power-Up)
-- **Advanced Image Pipeline**: Added drag-and-drop/paste support with automatic client-side **WebP compression**.
-- **Flexible Storage**: Introduced support for custom upload endpoints and **Cloudinary** fallback.
+### v1.2.0 (Premium UI & Image Power-Up)
+- **Lucide Icon Upgrade**: Replaced all 27 toolbar icons with high-quality, professional Lucide-styled SVGs.
+- **Initialization Loader**: Added a sophisticated shimmering glassmorphism loader for a smoother startup experience.
+- **Advanced Image Pipeline**: Added drag-and-drop support with automatic client-side **WebP compression**.
 - **Interactive UX**: Added loading state previews, 4-corner resizing handles, and native `<figcaption>` support.
-- **Smart Deletion**: Images can now be easily removed with Backspace/Delete when selected.
+- **Glassmorphism Design**: Enhanced modals and loaders with modern backdrop-blur effects.
 
 ### v1.1.2 (Security & Performance)
 - **Aggressive Size Optimization**: Reduced packed size to **28kB** by moving to ESM-only and pruning datasets.
