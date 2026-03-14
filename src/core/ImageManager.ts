@@ -79,6 +79,26 @@ export class ImageManager {
       const range = this.editor.selection.getRange();
       if (range && this.activeContainer.contains(range.commonAncestorContainer)) {
         e.preventDefault();
+        
+        const img = this.activeContainer.querySelector('img');
+        const imageId = img?.getAttribute('data-image-id');
+        const imageUrl = img?.src;
+        const options = this.editor.getOptions();
+
+        // 1. Trigger optional callback if provided
+        if (options.onImageDelete) {
+          options.onImageDelete(imageId || undefined, imageUrl);
+        }
+
+        // 2. Handle server-side deletion if endpoint is configured
+        if (imageId && options.imageEndpoints?.delete) {
+          fetch(options.imageEndpoints.delete, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: imageId, url: imageUrl })
+          }).catch(err => console.error('Failed to notify server of image deletion', err));
+        }
+
         this.activeContainer.remove();
         this.activeContainer = null;
         this.editor.el.dispatchEvent(new Event('input', { bubbles: true }));

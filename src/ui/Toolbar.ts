@@ -143,15 +143,10 @@ export class Toolbar {
 
         fileInput.addEventListener('change', (event) => {
           const target = event.target as HTMLInputElement;
-          const file = target.files?.[0];
+          const files = target.files;
 
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const url = e.target?.result as string;
-              this.editor.insertImage(url);
-            };
-            reader.readAsDataURL(file);
+          if (files && files.length > 0) {
+            this.editor.handleFiles(Array.from(files));
           }
 
           // Cleanup

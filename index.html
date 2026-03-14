@@ -109,7 +109,11 @@
         
         const editor = new InkFlowEditor(document.getElementById('editor'), {
             placeholder: 'Start writing something amazing...',
-            autofocus: true
+            autofocus: true,
+            cloudinaryFallback: {
+                cloudName: 'dsk6tf2jb',
+                uploadPreset: 'editor_uploads'
+            }
         });
 
         document.getElementById('get-html').addEventListener('click', () => {

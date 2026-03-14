@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from '../src/core/Editor';
+import { ImageUploader } from '../src/core/plugins/ImageUploader';
+
+vi.mock('../src/core/plugins/ImageUploader', () => ({
+  ImageUploader: {
+    compressImage: vi.fn((file: File) => Promise.resolve(file)),
+    uploadFile: vi.fn(() => Promise.resolve(null))
+  }
+}));
 
 describe('Editor New Features (HTML Paste & Formatting)', () => {
   let container: HTMLElement;
@@ -79,15 +87,17 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
   });
 
   describe('Image Drag & Drop / Paste', () => {
-    it('should handle pasting an image file', () => {
-      editor.insertImage = vi.fn();
+    it('should handle pasting an image file', async () => {
+      const insertImageSpy = vi.spyOn(editor, 'insertImage');
       const preventDefaultSpy = vi.fn();
 
-      // Mock FileReader
+      // Mock FileReader to trigger its onload event
       class MockFileReader {
         onload: any;
-        readAsDataURL() {
-          if (this.onload) this.onload({ target: { result: 'data:image/png;base64,mock' } });
+        readAsDataURL(file: Blob) {
+          setTimeout(() => {
+            if (this.onload) this.onload({ target: { result: 'data:image/png;base64,mock' } });
+          }, 0);
         }
       }
       global.FileReader = MockFileReader as any;
@@ -107,7 +117,11 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
       editor.el.dispatchEvent(pasteEvent);
 
       expect(preventDefaultSpy).toHaveBeenCalled();
-      expect(editor.insertImage).toHaveBeenCalledWith('data:image/png;base64,mock');
+      
+      // Wait for async processing to finish
+      await vi.waitFor(() => {
+        expect(insertImageSpy).toHaveBeenCalledWith('data:image/png;base64,mock');
+      });
     });
   });
 });

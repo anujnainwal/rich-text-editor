@@ -2,6 +2,7 @@ import { SelectionManager } from './SelectionManager';
 import { ImageManager } from './ImageManager';
 import { HistoryManager } from './HistoryManager';
 import { FloatingToolbar } from '../ui/toolbar/FloatingToolbar';
+import { ImageUploader } from './plugins/ImageUploader';
 import DOMPurify from 'dompurify';
 
 export interface ThemeConfig {
@@ -37,6 +38,16 @@ export interface EditorOptions {
   autoSave?: boolean; // default false
   showStatus?: boolean; // default true
   toolbarItems?: string[]; // IDs of tools to show
+  imageEndpoints?: { 
+    upload: string; 
+    delete: string; 
+  };
+  cloudinaryFallback?: { 
+    cloudName: string; 
+    uploadPreset: string; 
+  };
+  maxImageSizeMB?: number; // default 5
+  onImageDelete?: (imageId?: string, imageUrl?: string) => void;
 }
 
 export class CoreEditor {
@@ -96,6 +107,11 @@ export class CoreEditor {
 
     if (this.options.theme) {
       this.applyTheme(this.options.theme);
+    }
+
+    // Set default max image size if not provided
+    if (this.options.maxImageSizeMB === undefined) {
+      this.options.maxImageSizeMB = 5;
     }
 
     // Set default paragraph separator to <p>
@@ -356,17 +372,7 @@ export class CoreEditor {
 
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const url = event.target?.result as string;
-              this.insertImage(url);
-            };
-            reader.readAsDataURL(file);
-          }
-        }
+        this.handleFiles(Array.from(files));
       }
     });
 
@@ -926,18 +932,24 @@ export class CoreEditor {
   /**
    * Inserts an image at the current selection.
    */
-  insertImage(url: string): void {
+  insertImage(url: string, id?: string, isLoading: boolean = false): HTMLElement | null {
     this.focus();
     const range = this.selection.getRange();
-    if (!range) return;
+    if (!range) return null;
 
     const figure = document.createElement('figure');
     figure.classList.add('te-image-container');
     figure.setAttribute('contenteditable', 'false');
+    if (isLoading) {
+      figure.classList.add('is-loading');
+    }
 
     const img = document.createElement('img');
     img.src = url;
     img.classList.add('te-image');
+    if (id) {
+      img.setAttribute('data-image-id', id);
+    }
 
     const caption = document.createElement('figcaption');
     caption.classList.add('te-image-caption');
@@ -958,7 +970,7 @@ export class CoreEditor {
     range.deleteContents();
     range.insertNode(figure);
 
-    // Add a new paragraph after the figure for easier typing
+    // Add a trailing line break to make it easier to type after
     const p = document.createElement('p');
     p.innerHTML = '<br>';
     figure.after(p);
@@ -970,6 +982,8 @@ export class CoreEditor {
     this.selection.restoreSelection(nextRange);
 
     this.editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+    this.save();
+    return figure;
   }
 
   /**
@@ -1141,20 +1155,17 @@ export class CoreEditor {
 
     // First, check for image files in clipboard items
     if (e.clipboardData && e.clipboardData.items) {
+      const files: File[] = [];
       for (let i = 0; i < e.clipboardData.items.length; i++) {
         const item = e.clipboardData.items[i];
         if (item.type.startsWith('image/')) {
           const file = item.getAsFile();
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const url = event.target?.result as string;
-              this.insertImage(url);
-            };
-            reader.readAsDataURL(file);
-            return; // Handled as image, stop further processing
-          }
+          if (file) files.push(file);
         }
+      }
+      if (files.length > 0) {
+        this.handleFiles(files);
+        return;
       }
     }
 
@@ -1203,5 +1214,83 @@ export class CoreEditor {
    */
   getOptions(): EditorOptions {
     return this.options;
+  }
+
+  /**
+   * Internal helper to handle multiple files.
+   */
+  public async handleFiles(files: File[]): Promise<void> {
+    const maxMB = this.options.maxImageSizeMB || 5;
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+
+      let placeholder: HTMLElement | null = null;
+      try {
+        // 1. Enforce size limit (Pre-compression check)
+        if (file.size > maxMB * 1024 * 1024 * 3) { // Allow 3x limit for compression attempt
+           console.warn(`File ${file.name} is too large to even attempt processing.`);
+           continue; 
+        }
+
+        if (this.options.onSaving) this.options.onSaving();
+
+        // 2. Insert Preview Placeholder immediately
+        const previewUrl = URL.createObjectURL(file);
+        placeholder = this.insertImage(previewUrl, undefined, true);
+
+        // 3. Compress Client-Side
+        const processedFile = await ImageUploader.compressImage(file, maxMB);
+        
+        // Update placeholder preview with compressed blob if significantly different or if URL revoked
+        const compressedUrl = URL.createObjectURL(processedFile);
+        if (placeholder) {
+          const img = placeholder.querySelector('img');
+          if (img) img.src = compressedUrl;
+        }
+
+        // Final check after compression
+        if (processedFile.size > maxMB * 1024 * 1024) {
+          alert(`Image "${file.name}" exceeds the ${maxMB}MB limit even after compression.`);
+          placeholder?.remove();
+          continue;
+        }
+
+        // 4. Upload (Custom or Fallback)
+        const result = await ImageUploader.uploadFile(processedFile, this.options);
+
+        if (result) {
+          if (placeholder) {
+            const img = placeholder.querySelector('img');
+            if (img) {
+                img.src = result.imageUrl;
+                if (result.imageId) img.setAttribute('data-image-id', result.imageId);
+            }
+            placeholder.classList.remove('is-loading');
+          } else {
+            this.insertImage(result.imageUrl, result.imageId);
+          }
+        } else {
+          // 5. Default Base64 Fallback
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const url = event.target?.result as string;
+            if (placeholder) {
+                const img = placeholder.querySelector('img');
+                if (img) img.src = url;
+                placeholder.classList.remove('is-loading');
+            } else {
+                this.insertImage(url);
+            }
+          };
+          reader.readAsDataURL(processedFile);
+        }
+      } catch (error) {
+        console.error('Image handling failed', error);
+        placeholder?.remove();
+      } finally {
+        if (this.options.onSave) this.save(); // Cleanup status
+      }
+    }
   }
 }

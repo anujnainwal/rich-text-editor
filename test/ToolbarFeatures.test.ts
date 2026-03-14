@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from '../src/core/Editor';
 import { Toolbar } from '../src/ui/Toolbar';
+import { ImageUploader } from '../src/core/plugins/ImageUploader';
+
+vi.mock('../src/core/plugins/ImageUploader', () => ({
+  ImageUploader: {
+    compressImage: vi.fn((file) => Promise.resolve(file)),
+    uploadFile: vi.fn(() => Promise.resolve(null))
+  }
+}));
 
 describe('Toolbar New Features', () => {
   let editorContainer: HTMLElement;
@@ -86,7 +94,7 @@ describe('Toolbar New Features', () => {
   });
 
   describe('Local Image Upload', () => {
-    it('should create a file input and read file on change when image button is clicked', () => {
+    it('should create a file input and read file on change when image button is clicked', async () => {
       const buttons = toolbar.el.querySelectorAll('button.te-button');
       const imageBtn = Array.from(buttons).find((b: any) => b.title === 'Insert Image') as HTMLButtonElement;
       
@@ -105,8 +113,10 @@ describe('Toolbar New Features', () => {
 
       class MockFileReader {
         onload: any;
-        readAsDataURL() {
-          if (this.onload) this.onload({ target: { result: 'data:image/jpeg;base64,mock' } });
+        readAsDataURL(file: Blob) {
+          setTimeout(() => {
+            if (this.onload) this.onload({ target: { result: 'data:image/jpeg;base64,mock' } });
+          }, 0);
         }
       }
       global.FileReader = MockFileReader as any;
@@ -117,7 +127,9 @@ describe('Toolbar New Features', () => {
 
       appendedElement.dispatchEvent(new Event('change'));
 
-      expect(insertImageSpy).toHaveBeenCalledWith('data:image/jpeg;base64,mock');
+      await vi.waitFor(() => {
+        expect(insertImageSpy).toHaveBeenCalledWith('data:image/jpeg;base64,mock');
+      });
     });
   });
 });
