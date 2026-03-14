@@ -368,6 +368,36 @@
   overflow: hidden;
 }
 
+.te-content pre {
+  background-color: var(--te-bg-app);
+  border: 1px solid var(--te-border-color);
+  border-radius: var(--te-radius-md);
+  padding: 16px;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--te-text-main);
+  tab-size: 4;
+}
+
+.te-content code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Inline code style when not in a pre tag */
+.te-content :not(pre) > code {
+  background-color: var(--te-bg-app);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid var(--te-border-color);
+}
+
 /* Image Support */
 .te-image-container {
   position: relative;

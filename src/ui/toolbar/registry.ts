@@ -25,6 +25,7 @@ import { emoji } from './items/Emoji';
 import { link } from './items/Link';
 import { image } from './items/Image';
 import { table } from './items/Table';
+import { codeBlock } from './items/CodeBlock';
 
 const divider: ToolbarItem = { type: 'divider', title: '' };
 
@@ -60,5 +61,6 @@ export const toolbarItems: ToolbarItem[] = [
   { ...link, id: 'link' },
   { ...image, id: 'image' },
   { ...table, id: 'table' },
+  { ...codeBlock, id: 'code-block' },
   { ...clearFormatting, id: 'clear-formatting' }
 ];

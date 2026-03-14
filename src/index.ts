@@ -43,6 +43,16 @@ export class InkFlowEditor extends CoreEditor {
       this.toolbar.updateStatus('All changes saved', false);
     }
 
+    // Initialize metrics if enabled
+    if (augmentedOptions.showCharCount) {
+      this.toolbar.updateMetrics();
+    }
+
+    // Listen for changes to update metrics
+    this.el.addEventListener('input', () => {
+      this.toolbar?.updateMetrics();
+    });
+
     // Trigger initial change to sync optimized content with parent
     this.triggerChange();
   }

@@ -110,6 +110,9 @@
         const editor = new InkFlowEditor(document.getElementById('editor'), {
             placeholder: 'Start writing something amazing...',
             autofocus: true,
+            showCharCount: true,
+            maxCharCount: 100,
+            strictCharLimit: true,
             cloudinaryFallback: {
                 cloudName: 'dsk6tf2jb',
                 uploadPreset: 'editor_uploads'

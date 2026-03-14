@@ -49,6 +49,9 @@ export interface EditorOptions {
   };
   maxImageSizeMB?: number; // default 5
   onImageDelete?: (imageId?: string, imageUrl?: string) => void;
+  maxCharCount?: number;
+  showCharCount?: boolean;
+  strictCharLimit?: boolean;
 }
 
 export class CoreEditor {
@@ -102,6 +105,7 @@ export class CoreEditor {
     this.history = new HistoryManager(this.editableElement.innerHTML);
 
     this.setupInputHandlers();
+    this.setupLimitEnforcement();
     this.setupLinkClickHandlers();
     this.setupImageObserver();
     this.checkPlaceholder();
@@ -409,6 +413,66 @@ export class CoreEditor {
     });
 
     this.addEventListener(this.editableElement, 'keydown', (e: KeyboardEvent) => {
+      // Handle "Break-out" from Code Block (PRE)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const range = this.selection.getRange();
+        if (range && range.collapsed) {
+          const container = range.startContainer;
+          const pre = (container.nodeType === Node.ELEMENT_NODE 
+            ? container as HTMLElement 
+            : container.parentElement)?.closest('pre');
+
+          if (pre) {
+            // Get all text before and after the cursor within the PRE
+            const preRange = document.createRange();
+            preRange.setStart(pre, 0);
+            preRange.setEnd(range.startContainer, range.startOffset);
+            const textBefore = preRange.toString();
+
+            const postRange = document.createRange();
+            postRange.setStart(range.startContainer, range.startOffset);
+            postRange.setEnd(pre, pre.childNodes.length);
+            const textAfter = postRange.toString();
+
+            // The line is empty if we are between newlines or at the start/end
+            // The line is empty if we are between newlines or at the start/end
+            // We also trim to handle cases where there might be a trailing space or no real text
+            const isAtLineStart = textBefore === '' || textBefore.endsWith('\n');
+            const isAtLineEnd = textAfter === '' || textAfter.startsWith('\n');
+
+            if (isAtLineStart && isAtLineEnd) {
+              e.preventDefault();
+              
+              const fullText = pre.textContent || '';
+              const cursorIndex = textBefore.length;
+              
+              // Remove the current empty line
+              // If we are at a newline, remove it.
+              if (fullText.charAt(cursorIndex) === '\n') {
+                 pre.textContent = fullText.slice(0, cursorIndex) + fullText.slice(cursorIndex + 1);
+              } else if (fullText.charAt(cursorIndex - 1) === '\n') {
+                 pre.textContent = fullText.slice(0, cursorIndex - 1) + fullText.slice(cursorIndex);
+              } else if (fullText === '') {
+                 // Already empty
+              }
+
+              const p = document.createElement('p');
+              p.innerHTML = '<br>';
+              pre.after(p);
+
+              const newRange = document.createRange();
+              newRange.setStart(p, 0);
+              newRange.setEnd(p, 0);
+              this.selection.restoreSelection(newRange);
+              
+              this.normalize(); // Ensure structure is clean
+              this.triggerChange();
+              return;
+            }
+          }
+        }
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -419,6 +483,35 @@ export class CoreEditor {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         this.redo();
+      }
+    });
+  }
+
+  /**
+   * Sets up strict character limit enforcement.
+   */
+  private setupLimitEnforcement(): void {
+    this.editableElement.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (!this.options.maxCharCount || !this.options.strictCharLimit) return;
+
+      const currentCount = this.getCharCount();
+      if (currentCount >= this.options.maxCharCount) {
+        // Allow navigation and deletion keys
+        const allowedKeys = [
+          'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+          'Home', 'End', 'PageUp', 'PageDown', 'Control', 'Meta', 'Alt', 'Shift',
+          'a', 'c', 'v', 'x', 'z', 'y' // Allow common shortcuts
+        ];
+
+        // If it's a shortcut (Ctrl/Meta + key), check if it's one we allow
+        if (e.ctrlKey || e.metaKey) {
+            if (allowedKeys.includes(e.key.toLowerCase())) return;
+        }
+
+        if (!allowedKeys.includes(e.key)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }
     });
   }
@@ -1051,6 +1144,22 @@ export class CoreEditor {
   }
 
   /**
+   * Returns the plain text content of the editor.
+   */
+  getText(): string {
+    return this.editableElement.innerText || this.editableElement.textContent || '';
+  }
+
+  /**
+   * Returns the current character count based on plain text.
+   */
+  getCharCount(): number {
+    const text = this.getText();
+    // innerText/textContent often includes a trailing newline for the empty block
+    return text.replace(/\n$/, '').length;
+  }
+
+  /**
    * Normalizes the editor's content in-place.
    */
   public normalize(): void {
@@ -1120,7 +1229,7 @@ export class CoreEditor {
       ALLOWED_TAGS: [
         'b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-        'ul', 'ol', 'li', 'blockquote', 'hr', 
+        'ul', 'ol', 'li', 'blockquote', 'hr', 'pre', 'code', 
         'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot',
         'figure', 'figcaption'
       ],
@@ -1227,7 +1336,16 @@ export class CoreEditor {
       }
     }
 
-    // 4. Final check: if the output is just an empty paragraph, return empty string
+    // 4. Ensure a trailing empty paragraph if the last element is a "trapping" block
+    const lastChild = container.lastElementChild as HTMLElement;
+    const trappingBlocks = ['PRE', 'TABLE', 'FIGURE', 'BLOCKQUOTE', 'UL', 'OL', 'HR'];
+    if (lastChild && trappingBlocks.includes(lastChild.tagName)) {
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      container.appendChild(p);
+    }
+
+    // 5. Final check: if the output is just an empty paragraph, return empty string
     if (container.innerHTML.trim() === '<p><br></p>' || container.innerHTML.trim() === '<p></p>') {
       return '';
     }

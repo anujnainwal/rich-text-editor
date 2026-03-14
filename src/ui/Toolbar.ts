@@ -12,6 +12,8 @@ export class Toolbar {
   private activePicker: EmojiPicker | null = null;
   private activeModal: InputModal | null = null;
   private statusEl: HTMLElement | null = null;
+  private charCountEl: HTMLElement | null = null;
+  private saveStatusEl: HTMLElement | null = null;
   private boundUpdateActiveStates: () => void;
   private itemElements: Map<ToolbarItem, HTMLElement> = new Map();
 
@@ -37,6 +39,14 @@ export class Toolbar {
     this.statusEl.style.fontSize = '12px';
     this.statusEl.style.color = 'var(--te-text-muted)';
     this.statusEl.style.paddingRight = '12px';
+
+    // Internal segments
+    this.saveStatusEl = document.createElement('span');
+    this.charCountEl = document.createElement('span');
+    this.charCountEl.style.fontWeight = '500';
+
+    this.statusEl.appendChild(this.charCountEl);
+    this.statusEl.appendChild(this.saveStatusEl);
 
     return el;
   }
@@ -429,19 +439,53 @@ export class Toolbar {
   }
 
   public updateStatus(text: string, isLoading: boolean = false): void {
-    if (!this.statusEl || this.editor.getOptions().showStatus === false) return;
+    if (!this.saveStatusEl || this.editor.getOptions().showStatus === false) return;
 
-    this.statusEl.textContent = '';
+    this.saveStatusEl.textContent = '';
 
     if (isLoading) {
       const loader = document.createElement('div');
       loader.classList.add('te-toolbar-loader');
-      this.statusEl.appendChild(loader);
+      this.saveStatusEl.appendChild(loader);
     }
 
     const span = document.createElement('span');
     span.textContent = text;
-    this.statusEl.appendChild(span);
+    this.saveStatusEl.appendChild(span);
+  }
+
+  public updateMetrics(): void {
+    const options = this.editor.getOptions();
+    if (!this.charCountEl || options.showCharCount === false) {
+      if (this.charCountEl) this.charCountEl.textContent = '';
+      return;
+    }
+
+    const count = this.editor.getCharCount();
+    const limit = options.maxCharCount;
+
+    if (limit) {
+      this.charCountEl.textContent = `Chars: ${count}/${limit}`;
+      if (count > limit) {
+        this.charCountEl.style.color = '#ef4444'; // Red-500
+      } else {
+        this.charCountEl.style.color = 'inherit';
+      }
+    } else {
+      this.charCountEl.textContent = `Chars: ${count}`;
+      this.charCountEl.style.color = 'inherit';
+    }
+
+    // Add visual separator if both status and metrics are shown
+    if (this.charCountEl.textContent && this.saveStatusEl?.textContent) {
+      this.charCountEl.style.marginRight = '8px';
+      this.charCountEl.style.borderRight = '1px solid var(--te-border-color)';
+      this.charCountEl.style.paddingRight = '8px';
+    } else {
+      this.charCountEl.style.marginRight = '0';
+      this.charCountEl.style.borderRight = 'none';
+      this.charCountEl.style.paddingRight = '0';
+    }
   }
 
   public destroy(): void {
