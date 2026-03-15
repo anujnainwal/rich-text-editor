@@ -5,6 +5,8 @@ import { FloatingToolbar } from '../ui/toolbar/FloatingToolbar';
 import { ImageUploader } from './plugins/ImageUploader';
 import DOMPurify from 'dompurify';
 
+export type ToolbarPosition = 'top' | 'bottom' | 'left' | 'right' | 'floating';
+
 export interface ThemeConfig {
   primaryColor?: string;
   primaryHover?: string;
@@ -39,19 +41,20 @@ export interface EditorOptions {
   showStatus?: boolean; // default true
   showLoader?: boolean; // default true
   toolbarItems?: string[]; // IDs of tools to show
-  imageEndpoints?: { 
-    upload: string; 
-    delete: string; 
+  imageEndpoints?: {
+    upload: string;
+    delete: string;
   };
-  cloudinaryFallback?: { 
-    cloudName: string; 
-    uploadPreset: string; 
+  cloudinaryFallback?: {
+    cloudName: string;
+    uploadPreset: string;
   };
   maxImageSizeMB?: number; // default 5
   onImageDelete?: (imageId?: string, imageUrl?: string) => void;
   maxCharCount?: number;
   showCharCount?: boolean;
   strictCharLimit?: boolean;
+  toolbarPosition?: ToolbarPosition;
 }
 
 export class CoreEditor {
@@ -66,6 +69,7 @@ export class CoreEditor {
   private pendingStyles: Record<string, string> = {};
   private observer: MutationObserver | null = null;
   private floatingToolbar: FloatingToolbar | null = null;
+  private magicStateMap: Map<HTMLElement, number> = new Map();
   private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
   private loaderElement: HTMLElement | null = null;
   private isUndoingRedoing: boolean = false;
@@ -141,6 +145,7 @@ export class CoreEditor {
     }
   }
 
+
   /**
    * Applies custom theme variables to the editor container.
    */
@@ -214,7 +219,7 @@ export class CoreEditor {
 
     // Clear container
     this.container.innerHTML = '';
-    this.container.classList.remove('te-container', 'te-dark');
+    this.container.classList.remove('te-container', 'te-dark', 'te-toolbar-bottom', 'te-toolbar-floating');
     this.container.removeAttribute('style');
 
     if (this.floatingToolbar) {
@@ -225,21 +230,21 @@ export class CoreEditor {
 
   protected checkPlaceholder(): void {
     if (!this.editableElement) return;
-    
+
     // Logically empty if it has no text and no images/other media
-    const isEmpty = this.editableElement.textContent?.trim() === '' && 
-                    !this.editableElement.querySelector('img') &&
-                    !this.editableElement.querySelector('table') &&
-                    !this.editableElement.querySelector('ul') &&
-                    !this.editableElement.querySelector('ol') &&
-                    !this.editableElement.querySelector('hr') &&
-                    !this.editableElement.querySelector('figure') &&
-                    !this.editableElement.querySelector('blockquote') &&
-                    !this.editableElement.querySelector('pre');
-    
+    const isEmpty = this.editableElement.textContent?.trim() === '' &&
+      !this.editableElement.querySelector('img') &&
+      !this.editableElement.querySelector('table') &&
+      !this.editableElement.querySelector('ul') &&
+      !this.editableElement.querySelector('ol') &&
+      !this.editableElement.querySelector('hr') &&
+      !this.editableElement.querySelector('figure') &&
+      !this.editableElement.querySelector('blockquote') &&
+      !this.editableElement.querySelector('pre');
+
     if (isEmpty) {
       this.editableElement.classList.add('is-empty');
-      
+
       // Update alignment of placeholder to match current block alignment
       const firstChild = this.editableElement.firstElementChild as HTMLElement;
       if (firstChild) {
@@ -413,13 +418,33 @@ export class CoreEditor {
     });
 
     this.addEventListener(this.editableElement, 'keydown', (e: KeyboardEvent) => {
-      // Handle "Break-out" from Code Block (PRE)
+      // 1. Custom List Handling: Prevent item concatenation on Enter
+      if (e.key === 'Enter') {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const li = (range.startContainer.nodeType === Node.ELEMENT_NODE
+            ? range.startContainer as HTMLElement
+            : range.startContainer.parentElement)?.closest('li');
+
+          if (li) {
+            // Let the browser handle basic Enter if it's working, 
+            // but we'll normalize immediately after to ensure structure.
+            setTimeout(() => {
+              this.normalize();
+              this.triggerChange();
+            }, 0);
+          }
+        }
+      }
+
+      // 2. Handle "Break-out" from Code Block (PRE)
       if (e.key === 'Enter' && !e.shiftKey) {
         const range = this.selection.getRange();
         if (range && range.collapsed) {
           const container = range.startContainer;
-          const pre = (container.nodeType === Node.ELEMENT_NODE 
-            ? container as HTMLElement 
+          const pre = (container.nodeType === Node.ELEMENT_NODE
+            ? container as HTMLElement
             : container.parentElement)?.closest('pre');
 
           if (pre) {
@@ -442,18 +467,18 @@ export class CoreEditor {
 
             if (isAtLineStart && isAtLineEnd) {
               e.preventDefault();
-              
+
               const fullText = pre.textContent || '';
               const cursorIndex = textBefore.length;
-              
+
               // Remove the current empty line
               // If we are at a newline, remove it.
               if (fullText.charAt(cursorIndex) === '\n') {
-                 pre.textContent = fullText.slice(0, cursorIndex) + fullText.slice(cursorIndex + 1);
+                pre.textContent = fullText.slice(0, cursorIndex) + fullText.slice(cursorIndex + 1);
               } else if (fullText.charAt(cursorIndex - 1) === '\n') {
-                 pre.textContent = fullText.slice(0, cursorIndex - 1) + fullText.slice(cursorIndex);
+                pre.textContent = fullText.slice(0, cursorIndex - 1) + fullText.slice(cursorIndex);
               } else if (fullText === '') {
-                 // Already empty
+                // Already empty
               }
 
               const p = document.createElement('p');
@@ -464,7 +489,7 @@ export class CoreEditor {
               newRange.setStart(p, 0);
               newRange.setEnd(p, 0);
               this.selection.restoreSelection(newRange);
-              
+
               this.normalize(); // Ensure structure is clean
               this.triggerChange();
               return;
@@ -505,7 +530,7 @@ export class CoreEditor {
 
         // If it's a shortcut (Ctrl/Meta + key), check if it's one we allow
         if (e.ctrlKey || e.metaKey) {
-            if (allowedKeys.includes(e.key.toLowerCase())) return;
+          if (allowedKeys.includes(e.key.toLowerCase())) return;
         }
 
         if (!allowedKeys.includes(e.key)) {
@@ -523,7 +548,7 @@ export class CoreEditor {
     if (this.historyTimeout) {
       clearTimeout(this.historyTimeout);
       this.historyTimeout = null;
-      
+
       const html = this.editableElement.innerHTML;
       const path = this.selection.getSelectionPath(this.editableElement);
       this.history.record(html, path);
@@ -541,7 +566,7 @@ export class CoreEditor {
       }
       this.scheduleAutoSave();
     }
-    
+
     if (this.options.onChange) {
       this.options.onChange(this.getHTML());
     }
@@ -605,21 +630,21 @@ export class CoreEditor {
   private createLoader(): void {
     this.loaderElement = document.createElement('div');
     this.loaderElement.className = 'te-loader-overlay';
-    
+
     const spinner = document.createElement('div');
     spinner.className = 'te-loader-spinner';
-    
+
     const shimmer = document.createElement('div');
     shimmer.className = 'te-loader-shimmer';
-    
+
     const text = document.createElement('div');
     text.className = 'te-loader-text';
     text.textContent = 'Initializing Editor...';
-    
+
     this.loaderElement.appendChild(spinner);
     this.loaderElement.appendChild(shimmer);
     this.loaderElement.appendChild(text);
-    
+
     this.container.appendChild(this.loaderElement);
   }
 
@@ -679,12 +704,23 @@ export class CoreEditor {
     // Special handling for clear formatting to also reset block blocks
     if (command === 'removeFormat') {
       document.execCommand('formatBlock', false, 'p');
-      
+
       // Also clear pending styles
       this.pendingStyles = {};
     }
 
-    // Normalize HTML after execution to fix any invalid nesting (like lists inside paragraphs)
+    // Special command for Magic Format
+    if (command === 'magicFormat') {
+      this.magicFormat();
+      return;
+    }
+
+    if (command === 'resetMagicFormat') {
+      this.resetMagicFormat();
+      return;
+    }
+
+    // Normalize HTML after execution
     this.normalize();
 
     // Dispatch an input event to notify listeners of changes
@@ -698,7 +734,7 @@ export class CoreEditor {
     this.addEventListener(this.editableElement, 'click', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const anchor = target.closest('a');
-      
+
       if (anchor && this.editableElement.contains(anchor)) {
         e.preventDefault();
         const url = anchor.getAttribute('href');
@@ -707,6 +743,230 @@ export class CoreEditor {
         }
       }
     });
+  }
+
+  /**
+   * Magic Format logic: Cycles through aesthetic presets for the entire document.
+   */
+  public magicFormat(): void {
+    // Get current global state or default to 0
+    let globalState = (this.magicStateMap.get(this.editableElement) || 0);
+    const nextState = (globalState + 1) % 3;
+    this.magicStateMap.set(this.editableElement, nextState);
+
+    // Get all root-level blocks and specific elements
+    const blocks = Array.from(this.editableElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, table, blockquote, figure, li')) as HTMLElement[];
+
+    if (blocks.length === 0) return;
+
+    blocks.forEach(block => {
+      // Apply emoji enrichment
+      this.enrichBlockWithEmojis(block);
+
+      // Apply tag-specific formatting based on the global state
+      if (block.tagName === 'TABLE') {
+        this.formatMagicTable(block, nextState);
+      } else if (block.tagName === 'FIGURE' || block.querySelector('img')) {
+        this.formatMagicImage(block, nextState);
+      } else if (block.tagName.startsWith('H')) {
+        this.formatMagicHeading(block, nextState);
+      } else if (block.tagName === 'P' || block.tagName === 'LI' || block.tagName === 'BLOCKQUOTE') {
+        this.formatMagicText(block, nextState);
+      }
+    });
+
+    this.normalize();
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+    this.handleInput();
+  }
+
+  /**
+   * Resets all magic formatting (inline styles) from the document.
+   */
+  public resetMagicFormat(): void {
+    const blocks = Array.from(this.editableElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, table, blockquote, figure, li')) as HTMLElement[];
+    
+    blocks.forEach(block => {
+      // Clear all inline styles
+      block.removeAttribute('style');
+      
+      // Clear styles from children (cells, images, etc.)
+      block.querySelectorAll('*').forEach((child: any) => {
+        child.removeAttribute('style');
+      });
+
+      // Reset emoji text if possible (optional, but keep complex icons for now or just leave as is)
+    });
+
+    this.magicStateMap.clear();
+    this.normalize();
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+    this.handleInput();
+  }
+
+  private formatMagicTable(table: HTMLElement, state: number): void {
+    const states = [
+      // State 0: Premium Zebra (Modern Rounded)
+      () => {
+        table.style.borderCollapse = 'separate';
+        table.style.borderRadius = '12px';
+        table.style.overflow = 'hidden';
+        table.style.border = '1px solid var(--te-border-color)';
+        table.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
+        table.querySelectorAll('td, th').forEach((cell: any) => {
+          cell.style.border = '1px solid var(--te-border-color)';
+        });
+      },
+      // State 1: Clean Minimal (No vertical borders, soft header)
+      () => {
+        table.style.borderCollapse = 'collapse';
+        table.style.borderRadius = '0';
+        table.style.boxShadow = 'none';
+        table.style.border = 'none';
+        table.style.borderTop = '2px solid var(--te-primary-color)';
+        table.style.borderBottom = '2px solid var(--te-primary-color)';
+        table.querySelectorAll('td, th').forEach((cell: any) => {
+          cell.style.borderLeft = 'none';
+          cell.style.borderRight = 'none';
+          cell.style.borderBottom = '1px solid var(--te-border-color)';
+        });
+      },
+      // State 2: Ultra Minimal (No borders whatsoever)
+      () => {
+        table.style.border = 'none';
+        table.style.boxShadow = 'none';
+        table.style.background = 'none';
+        table.style.borderRadius = '0';
+        table.querySelectorAll('td, th').forEach((cell: any) => {
+          cell.style.border = 'none';
+          cell.style.padding = '12px 0';
+        });
+      }
+    ];
+    states[state]();
+  }
+
+  private formatMagicImage(figure: HTMLElement, state: number): void {
+    const img = figure.querySelector('img');
+    if (!img) return;
+
+    const states = [
+      // State 0: Shadow & Rounded
+      () => {
+        img.style.borderRadius = '12px';
+        img.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+        img.style.border = '1px solid var(--te-border-color)';
+      },
+      // State 1: Thick Border Frame
+      () => {
+        img.style.borderRadius = '0';
+        img.style.border = '8px solid white';
+        img.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+      },
+      // State 2: Soft Minimal
+      () => {
+        img.style.borderRadius = '8px';
+        img.style.boxShadow = 'none';
+        img.style.border = 'none';
+      }
+    ];
+    states[state]();
+  }
+
+  private formatMagicHeading(h: HTMLElement, state: number): void {
+    const states = [
+      // State 0: Typography Focus (Modern Weight)
+      () => {
+        h.style.fontWeight = '800';
+        h.style.color = 'var(--te-primary-color)';
+        h.style.letterSpacing = '-0.02em';
+        h.style.border = 'none';
+        h.style.marginBottom = '1.5rem';
+      },
+      // State 1: Elegant Serif Look (Soft Color)
+      () => {
+        h.style.fontFamily = 'serif';
+        h.style.color = '#4338ca'; // Indigo 700
+        h.style.fontStyle = 'italic';
+        h.style.border = 'none';
+        h.style.letterSpacing = 'normal';
+      },
+      // State 2: All Caps & Spaced (Professional Accent)
+      () => {
+        h.style.textTransform = 'uppercase';
+        h.style.letterSpacing = '0.2em';
+        h.style.color = '#1e1b4b'; // Indigo 950
+        h.style.fontWeight = '900';
+        h.style.border = 'none';
+      }
+    ];
+    states[state]();
+  }
+
+  private formatMagicText(p: HTMLElement, state: number): void {
+    const states = [
+      // State 0: Premium Reading Mode
+      () => {
+        p.style.lineHeight = '2';
+        p.style.fontSize = '1.15rem';
+        p.style.color = '#334155'; // Slate 700
+        p.style.fontWeight = '400';
+        p.style.border = 'none';
+      },
+      // State 1: Soft Highlight Look
+      () => {
+        p.style.background = 'rgba(99, 102, 241, 0.05)';
+        p.style.borderLeft = '4px solid #818cf8';
+        p.style.padding = '1rem 1.5rem';
+        p.style.borderRadius = '8px';
+        p.style.color = '#1e293b';
+      },
+      // State 2: Modern Clean Minimal
+      () => {
+        p.style.fontWeight = '500';
+        p.style.letterSpacing = '0.01em';
+        p.style.color = '#0f172a'; // Slate 900
+        p.style.background = 'none';
+        p.style.border = 'none';
+        p.style.padding = '0.5rem 0';
+      }
+    ];
+    states[state]();
+  }
+
+  /**
+   * Enriches text nodes within a block with emojis without breaking HTML structure.
+   */
+  private enrichBlockWithEmojis(block: HTMLElement): void {
+    const emojiMap: Record<string, string> = {
+      'success': '✅',
+      'error': '❌',
+      'warning': '⚠️',
+      'info': 'ℹ️',
+      'magic': '✨',
+      'done': '🎯',
+      'plan': '📝',
+      'link': '🔗',
+      'image': '🖼️',
+      'table': '📊',
+      'celebrate': '🎉',
+      'rocket': '🚀'
+    };
+
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let node;
+    while (node = walker.nextNode()) {
+      let text = node.nodeValue || '';
+      let changed = false;
+      Object.entries(emojiMap).forEach(([word, emoji]) => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        if (regex.test(text) && !text.includes(emoji)) {
+          text = text.replace(regex, `${emoji} ${word}`);
+          changed = true;
+        }
+      });
+      if (changed) node.nodeValue = text;
+    }
   }
 
   /**
@@ -719,15 +979,33 @@ export class CoreEditor {
 
     const table = document.createElement('table');
     table.classList.add('te-table');
-    
-    for (let r = 0; r < rows; r++) {
-      const tr = document.createElement('tr');
+
+    // Create thead for the first row
+    if (rows > 0) {
+      const thead = document.createElement('thead');
+      const headerTr = document.createElement('tr');
       for (let c = 0; c < cols; c++) {
-        const td = document.createElement('td');
-        td.innerHTML = '<br>'; // Empty cell
-        tr.appendChild(td);
+        const th = document.createElement('th');
+        th.innerHTML = '<br>';
+        headerTr.appendChild(th);
       }
-      table.appendChild(tr);
+      thead.appendChild(headerTr);
+      table.appendChild(thead);
+    }
+
+    // Create tbody for remaining rows
+    if (rows > 1) {
+      const tbody = document.createElement('tbody');
+      for (let r = 1; r < rows; r++) {
+        const tr = document.createElement('tr');
+        for (let c = 0; c < cols; c++) {
+          const td = document.createElement('td');
+          td.innerHTML = '<br>'; // Empty cell
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
     }
 
     range.deleteContents();
@@ -740,7 +1018,7 @@ export class CoreEditor {
       const p = document.createElement('p');
       p.innerHTML = '<br>';
       table.after(p);
-      
+
       // If there was a lone BR, remove it as we now have a proper P
       if (next && next.tagName === 'BR') {
         next.remove();
@@ -781,12 +1059,12 @@ export class CoreEditor {
    */
   public deleteRow(): void {
     const td = this.getSelectedTd();
-      if (td && td.parentElement) {
-        const tr = td.parentElement as HTMLTableRowElement;
-        const table = tr.parentElement as HTMLTableElement;
-        if (table.rows.length > 1) {
-          // QA FIX: Find a neighbor to focus BEFORE deleting
-          const rowIndex = tr.rowIndex;
+    if (td && td.parentElement) {
+      const tr = td.parentElement as HTMLTableRowElement;
+      const table = tr.parentElement as HTMLTableElement;
+      if (table.rows.length > 1) {
+        // QA FIX: Find a neighbor to focus BEFORE deleting
+        const rowIndex = tr.rowIndex;
         const neighbor = table.rows[rowIndex + 1] || table.rows[rowIndex - 1];
         const cellIndex = td.cellIndex;
 
@@ -842,7 +1120,7 @@ export class CoreEditor {
     if (table.rows[0].cells.length > 1) {
       // QA FIX: Find a neighbor to focus
       const neighborCell = td.nextElementSibling || td.previousElementSibling;
-      
+
       for (let i = 0; i < table.rows.length; i++) {
         table.rows[i].cells[cellIndex].remove();
       }
@@ -1011,7 +1289,7 @@ export class CoreEditor {
    */
   createLink(url: string): void {
     this.focus();
-    
+
     // Security check: strictly block malicious URI schemes
     url = url.trim();
     if (/^(javascript|vbscript|data|file):/i.test(url)) {
@@ -1036,12 +1314,12 @@ export class CoreEditor {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      
+
       // If selection is collapsed (no text selected), insert the URL as text first
       if (range.collapsed) {
         const textNode = document.createTextNode(url);
         range.insertNode(textNode);
-        
+
         // Select the newly inserted text
         const newRange = document.createRange();
         newRange.selectNodeContents(textNode);
@@ -1164,7 +1442,7 @@ export class CoreEditor {
    */
   public normalize(): void {
     const raw = this.editableElement.innerHTML;
-    
+
     // CRITICAL QA FIX: Use marker-based preservation for structural changes
     const selection = this.selection.getRange();
     let startMarker: HTMLElement | null = null;
@@ -1174,7 +1452,7 @@ export class CoreEditor {
       startMarker = document.createElement('span');
       startMarker.id = 'te-selection-start';
       startMarker.style.display = 'none';
-      
+
       endMarker = document.createElement('span');
       endMarker.id = 'te-selection-end';
       endMarker.style.display = 'none';
@@ -1189,11 +1467,11 @@ export class CoreEditor {
     }
 
     const normalized = this.normalizeHTML(this.editableElement.innerHTML);
-    
+
     // Always apply if markers were added, or if HTML changed
     if (normalized !== raw || startMarker) {
       this.editableElement.innerHTML = normalized;
-      
+
       const newStart = this.editableElement.querySelector('#te-selection-start');
       const newEnd = this.editableElement.querySelector('#te-selection-end');
 
@@ -1227,14 +1505,14 @@ export class CoreEditor {
 
     const result = DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a', 
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-        'ul', 'ol', 'li', 'blockquote', 'hr', 'pre', 'code', 
+        'b', 'i', 'u', 's', 'span', 'div', 'p', 'br', 'a',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'blockquote', 'hr', 'pre', 'code',
         'img', 'table', 'tbody', 'tr', 'td', 'th', 'thead', 'tfoot',
         'figure', 'figcaption'
       ],
       ALLOWED_ATTR: [
-        'href', 'src', 'alt', 'style', 'color', 'background-color', 
+        'href', 'src', 'alt', 'style', 'color', 'background-color',
         'class', 'id', 'target', 'rel', 'contenteditable', 'data-placeholder', 'data-image-id'
       ],
       ALLOW_DATA_ATTR: true,
@@ -1254,20 +1532,20 @@ export class CoreEditor {
     if (!this.normalizationContainer) {
       this.normalizationContainer = document.createElement('div');
     }
-    
+
     const container = this.normalizationContainer;
     container.innerHTML = html;
-    
+
     // 0. Wrap top-level text nodes and inline elements in <p>
     const rootNodes = Array.from(container.childNodes);
     let currentParagraph: HTMLElement | null = null;
 
     rootNodes.forEach(node => {
       // Check if node is inline (text or inline element like span/b/i)
-      const isInline = node.nodeType === Node.TEXT_NODE || 
-                       (node.nodeType === Node.ELEMENT_NODE && 
-                        !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'FIGURE'].includes((node as HTMLElement).tagName));
-      
+      const isInline = node.nodeType === Node.TEXT_NODE ||
+        (node.nodeType === Node.ELEMENT_NODE &&
+          !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'FIGURE'].includes((node as HTMLElement).tagName));
+
       if (isInline) {
         // Skip whitespace-only text nodes between blocks
         if (node.nodeType === Node.TEXT_NODE && (node.textContent || '').trim() === '' && !currentParagraph) {
@@ -1284,14 +1562,14 @@ export class CoreEditor {
       }
     });
 
-    // 1. Fix list nesting: lift <ul> and <ol> out of <p>
+    // 1. Fix structural nesting: lift <ul>, <ol>, <table> out of <p>
     const paras = container.querySelectorAll('p');
     paras.forEach(p => {
-      const lists = p.querySelectorAll('ul, ol');
-      if (lists.length > 0) {
-        lists.forEach(list => {
-          // Move list after the paragraph
-          p.after(list);
+      const complexBlocks = p.querySelectorAll('ul, ol, table, h1, h2, h3, h4, h5, h6, pre, blockquote');
+      if (complexBlocks.length > 0) {
+        complexBlocks.forEach(block => {
+          // Move block after the paragraph
+          p.after(block);
         });
         // If the paragraph is now empty (or only has whitespace/BR), remove it
         if (p.innerHTML.trim() === '' || p.innerHTML.trim() === '<br>') {
@@ -1315,7 +1593,7 @@ export class CoreEditor {
 
     // 3. Remove empty paragraphs (except if it's the only one or has a BR)
     const allParas = Array.from(container.querySelectorAll('p'));
-    
+
     // First remove empty ones in the middle
     allParas.forEach(p => {
       if (p.innerHTML.trim() === '' && container.childNodes.length > 1 && p !== container.lastElementChild) {
@@ -1328,7 +1606,7 @@ export class CoreEditor {
       const p = allParas[i];
       const isEmpty = p.innerHTML.trim() === '' || p.innerHTML.trim() === '<br>';
       const isLast = p === container.lastElementChild;
-      
+
       if (isEmpty && isLast && container.children.length > 1) {
         p.remove();
       } else {
@@ -1357,7 +1635,7 @@ export class CoreEditor {
   // Handle paste events to sanitize inherited malware and styles
   private handlePaste(e: ClipboardEvent): void {
     e.preventDefault();
-    
+
     let text = (e.clipboardData || (window as any).clipboardData).getData('text/plain');
     let html = (e.clipboardData || (window as any).clipboardData).getData('text/html');
 
@@ -1377,6 +1655,27 @@ export class CoreEditor {
       }
     }
 
+    // Truncate based on character limit if enabled
+    if (this.options.maxCharCount && this.options.strictCharLimit) {
+      const currentCount = this.getCharCount();
+      const selection = window.getSelection();
+      let selectionLength = 0;
+      if (selection && selection.rangeCount > 0) {
+        selectionLength = selection.toString().length;
+      }
+
+      const available = this.options.maxCharCount - (currentCount - selectionLength);
+      if (available <= 0) {
+        return; // No space left
+      }
+
+      if (text.length > available) {
+        text = text.substring(0, available);
+        // If we truncate, we force plain text to avoid broken HTML tags
+        html = '';
+      }
+    }
+
     // Auto-format pasted raw HTML strings if it's plain text code
     const isHtmlString = /<([a-z1-6]+)\b[^>]*>[\s\S]*<\/\1>/i.test(text) || /^\s*<[a-z1-6]+\b[^>]*>/i.test(text);
     if (!html && text && isHtmlString) {
@@ -1388,7 +1687,7 @@ export class CoreEditor {
       // Sanitize the HTML before inserting
       const safeHTML = this.sanitize(html);
       this.execute('insertHTML', safeHTML);
-    } else {
+    } else if (text) {
       // Just plain text
       this.execute('insertText', text);
     }
@@ -1429,8 +1728,8 @@ export class CoreEditor {
       try {
         // 1. Enforce size limit (Pre-compression check)
         if (file.size > maxMB * 1024 * 1024 * 3) { // Allow 3x limit for compression attempt
-           console.warn(`File ${file.name} is too large to even attempt processing.`);
-           continue; 
+          console.warn(`File ${file.name} is too large to even attempt processing.`);
+          continue;
         }
 
         if (this.options.onSaving) this.options.onSaving();
@@ -1441,7 +1740,7 @@ export class CoreEditor {
 
         // 3. Compress Client-Side
         const processedFile = await ImageUploader.compressImage(file, maxMB);
-        
+
         // Update placeholder preview with compressed blob if significantly different or if URL revoked
         const compressedUrl = URL.createObjectURL(processedFile);
         if (placeholder) {
@@ -1463,8 +1762,8 @@ export class CoreEditor {
           if (placeholder) {
             const img = placeholder.querySelector('img');
             if (img) {
-                img.src = result.imageUrl;
-                if (result.imageId) img.setAttribute('data-image-id', result.imageId);
+              img.src = result.imageUrl;
+              if (result.imageId) img.setAttribute('data-image-id', result.imageId);
             }
             placeholder.classList.remove('is-loading');
           } else {
@@ -1476,11 +1775,11 @@ export class CoreEditor {
           reader.onload = (event) => {
             const url = event.target?.result as string;
             if (placeholder) {
-                const img = placeholder.querySelector('img');
-                if (img) img.src = url;
-                placeholder.classList.remove('is-loading');
+              const img = placeholder.querySelector('img');
+              if (img) img.src = url;
+              placeholder.classList.remove('is-loading');
             } else {
-                this.insertImage(url);
+              this.insertImage(url);
             }
           };
           reader.readAsDataURL(processedFile);

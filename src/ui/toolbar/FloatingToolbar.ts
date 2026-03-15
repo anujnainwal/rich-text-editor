@@ -23,12 +23,27 @@ export class FloatingToolbar {
     el.style.display = 'none';
     el.style.position = 'absolute';
     el.style.zIndex = '2000';
+
+    const options = this.editor.getOptions();
+    const isPrimaryFloating = options.toolbarPosition === 'floating';
     
-    // Use a subset of tools for the floating toolbar
-    const floatingTools = ['heading', 'bold', 'italic', 'underline', 'strikethrough', 'highlight-color', 'link', 'clear-formatting'];
-    const items = toolbarItems.filter(item => item.id && floatingTools.includes(item.id));
+    // In primary floating mode, we show almost all tools. Otherwise, just a subset.
+    const toolsToShow = isPrimaryFloating 
+      ? ['bold', 'italic', 'underline', 'strikethrough', 'textColor', 'highlight-color', 'divider', 'heading', 'bullet-list', 'ordered-list', 'divider', 'link', 'image', 'table', 'code-block', 'emoji', 'clear-formatting']
+      : ['heading', 'bold', 'italic', 'underline', 'strikethrough', 'highlight-color', 'link', 'clear-formatting'];
+
+    const items = isPrimaryFloating 
+      ? toolbarItems.filter(item => item.id && (toolsToShow.includes(item.id) || item.type === 'divider'))
+      : toolbarItems.filter(item => item.id && toolsToShow.includes(item.id));
 
     items.forEach(item => {
+      if (item.type === 'divider') {
+        const div = document.createElement('div');
+        div.className = 'te-floating-divider';
+        el.appendChild(div);
+        return;
+      }
+
       const btn = document.createElement('button');
       btn.className = 'te-floating-btn';
       btn.title = item.title;
@@ -114,7 +129,17 @@ export class FloatingToolbar {
 
   private updatePosition() {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    const options = this.editor.getOptions();
+    const isPrimaryFloating = options.toolbarPosition === 'floating';
+
+    if (!selection || selection.rangeCount === 0) {
+      if (!this.activeModal) this.hide();
+      return;
+    }
+
+    // In primary floating mode, we show it even on collapsed selection (at cursor)
+    // In secondary mode (top/bottom fixed), we only show on actual selection.
+    if (selection.isCollapsed && !isPrimaryFloating) {
       if (!this.activeModal) this.hide();
       return;
     }

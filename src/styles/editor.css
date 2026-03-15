@@ -91,6 +91,62 @@
   z-index: 10;
 }
 
+.te-container.te-toolbar-bottom .te-toolbar {
+  top: auto;
+  bottom: 0;
+  border-bottom: none;
+  border-top: 1px solid var(--te-border-color);
+  order: 2; /* Ensure it stays after content if flex direction is column */
+}
+
+.te-container.te-toolbar-left, 
+.te-container.te-toolbar-right {
+  flex-direction: row;
+}
+
+.te-container.te-toolbar-left .te-toolbar,
+.te-container.te-toolbar-right .te-toolbar {
+  flex-direction: column;
+  width: auto;
+  min-width: 48px;
+  height: 100%;
+  border-bottom: none;
+  overflow-y: auto;
+  position: relative; /* Not sticky since the container is row-based and height-constrained */
+  flex-wrap: nowrap;
+  padding: 12px 6px;
+}
+
+.te-container.te-toolbar-left .te-toolbar {
+  border-right: 1px solid var(--te-border-color);
+}
+
+.te-container.te-toolbar-right .te-toolbar {
+  border-left: 1px solid var(--te-border-color);
+  order: 2;
+}
+
+.te-container.te-toolbar-left .te-toolbar-status,
+.te-container.te-toolbar-right .te-toolbar-status {
+  flex-direction: column;
+  margin-top: auto;
+  margin-left: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--te-border-color);
+  width: 100%;
+}
+
+.te-container.te-toolbar-left .te-divider,
+.te-container.te-toolbar-right .te-divider {
+  width: 20px;
+  height: 1px;
+  margin: 6px 0;
+}
+
+.te-container.te-toolbar-floating .te-toolbar {
+  display: none !important;
+}
+
 .te-divider {
   width: 1px;
   height: 20px;
@@ -511,50 +567,77 @@
 /* Table Support */
 .te-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin: 1.5rem 0;
   border: 1px solid var(--te-border-color);
-  border-radius: var(--te-radius-md);
+  border-radius: var(--te-radius-lg);
   table-layout: fixed;
+  overflow: hidden;
+  box-shadow: var(--te-shadow-sm);
 }
 
-.te-table td, .te-table th {
+.te-table th, .te-table td {
   border: 1px solid var(--te-border-color);
-  padding: 12px;
-  min-height: 44px;
+  border-top: none;
+  border-left: none;
+  padding: 14px 16px;
+  min-height: 48px;
   vertical-align: top;
   position: relative;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--te-text-main);
+  background: var(--te-bg-editor);
 }
 
-.te-table tr {
-  border-bottom: 1px solid var(--te-border-color);
+/* Remove borders on last child edges to respect table radius */
+.te-table th:last-child, .te-table td:last-child {
+  border-right: none;
 }
 
-.te-table tr:last-child {
+.te-table tr:last-child td {
   border-bottom: none;
 }
 
-.te-table td:hover {
-  background-color: var(--te-btn-hover);
+/* Header Styling */
+.te-table th {
+  background: var(--te-bg-app);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--te-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: left;
+  border-bottom: 2px solid var(--te-border-color);
 }
 
+/* Zebra Striping & Row States */
+.te-table tr:nth-child(even) td {
+  background: rgba(241, 245, 249, 0.3);
+}
+
+.te-dark .te-table tr:nth-child(even) td {
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.te-table tr:hover td {
+  background: var(--te-btn-hover);
+}
+
+/* Cell Focus States */
 .te-table td:focus-within {
-  background-color: var(--te-btn-active);
-  outline: none;
+  background: var(--te-bg-editor);
+  box-shadow: inset 0 0 0 2px var(--te-primary-color);
+  z-index: 1;
 }
 
 .te-dark .te-table {
-  border-color: #334155;
+  border-color: var(--te-border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
 
-.te-dark .te-table td, .te-dark .te-table th {
-  border-color: #334155;
-}
-
-.te-dark .te-table td:hover {
-  background-color: #1e293b;
+.te-dark .te-table th {
+  background: #0f172a;
 }
 
 /* Toolbar Loader */
@@ -647,6 +730,29 @@
   border-color: var(--te-primary-color);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
   background: var(--te-bg-editor);
+}
+
+.te-modal-file-input {
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.te-modal-file-input::-webkit-file-upload-button {
+  background: var(--te-primary-color);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.te-modal-file-input::-webkit-file-upload-button:hover {
+  background: var(--te-primary-hover);
 }
 
 .te-modal-footer {

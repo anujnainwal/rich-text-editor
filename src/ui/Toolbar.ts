@@ -122,7 +122,7 @@ export class Toolbar {
     button.addEventListener('mousedown', (e) => {
       e.preventDefault();
 
-      if (item.command === 'createLink' || item.command === 'insertTable') {
+      if (item.command === 'createLink' || item.command === 'insertTable' || item.command === 'insertImage') {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
@@ -150,33 +150,42 @@ export class Toolbar {
       }
 
       if (item.command === 'insertImage') {
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.style.display = 'none';
+        if (this.activeModal) this.activeModal.close();
 
-        fileInput.addEventListener('change', (event) => {
-          const target = event.target as HTMLInputElement;
-          const files = target.files;
+        this.activeModal = new InputModal(
+          'Insert Image',
+          [
+            { id: 'url', label: 'Image URL', type: 'text', placeholder: 'https://example.com/image.jpg' },
+            { id: 'file', label: 'Or Upload File', type: 'file' }
+          ],
+          (values) => {
+            if (this.savedRange) {
+              const selection = window.getSelection();
+              if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(this.savedRange);
+              }
+            }
 
-          if (files && files.length > 0) {
-            this.editor.handleFiles(Array.from(files));
-          }
+            if (values.file) {
+              // File upload takes precedence if selected
+              this.editor.handleFiles([values.file]);
+            } else if (values.url && values.url.trim() !== '') {
+              // Otherwise use URL if provided
+              this.editor.insertImage(values.url);
+            }
+            
+            this.savedRange = null;
+          },
+          () => {
+            this.activeModal = null;
+            this.savedRange = null;
+          },
+          this.editor.getOptions().theme,
+          this.editor.getOptions().dark
+        );
 
-          // Cleanup
-          document.body.removeChild(fileInput);
-        });
-
-        document.body.appendChild(fileInput);
-        fileInput.click();
-
-        // Commented out URL prompt logic:
-        /*
-        const url = window.prompt('Enter the Image URL');
-        if (url) {
-          this.editor.insertImage(url);
-        }
-        */
+        this.activeModal.show(button);
         return;
       }
 

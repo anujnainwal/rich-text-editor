@@ -36,10 +36,26 @@ export class InkFlowEditor extends CoreEditor {
     }
     
     this.toolbar = new Toolbar(this);
-    // Move toolbar to the top of the container
-    this.container.insertBefore(this.toolbar.el, this.editableElement);
+    
+    const pos = augmentedOptions.toolbarPosition || 'top';
+    
+    if (pos === 'top') {
+      this.container.insertBefore(this.toolbar.el, this.editableElement);
+    } else if (pos === 'bottom') {
+      this.container.appendChild(this.toolbar.el);
+      this.container.classList.add('te-toolbar-bottom');
+    } else if (pos === 'left') {
+      this.container.insertBefore(this.toolbar.el, this.editableElement);
+      this.container.classList.add('te-toolbar-left');
+    } else if (pos === 'right') {
+      this.container.appendChild(this.toolbar.el);
+      this.container.classList.add('te-toolbar-right');
+    } else if (pos === 'floating') {
+      // Main toolbar is not attached to the container
+      this.container.classList.add('te-toolbar-floating');
+    }
 
-    if (augmentedOptions.showStatus !== false && this.toolbar) {
+    if (augmentedOptions.showStatus !== false && this.toolbar && pos !== 'floating') {
       this.toolbar.updateStatus('All changes saved', false);
     }
 

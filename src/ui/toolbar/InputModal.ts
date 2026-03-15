@@ -3,7 +3,7 @@ import type { ThemeConfig } from '../../core/Editor';
 export interface ModalField {
   id: string;
   label: string;
-  type: 'text' | 'number';
+  type: 'text' | 'number' | 'file';
   placeholder?: string;
   defaultValue?: string;
   min?: string;
@@ -12,7 +12,7 @@ export interface ModalField {
 
 export class InputModal {
   private container: HTMLElement;
-  private onConfirm: (values: Record<string, string>) => void;
+  private onConfirm: (values: Record<string, any>) => void;
   private onClose: () => void;
   private dark?: boolean;
   private theme?: ThemeConfig;
@@ -21,7 +21,7 @@ export class InputModal {
   constructor(
     title: string,
     fields: ModalField[],
-    onConfirm: (values: Record<string, string>) => void,
+    onConfirm: (values: Record<string, any>) => void,
     onClose: () => void,
     theme?: ThemeConfig,
     dark?: boolean
@@ -73,6 +73,10 @@ export class InputModal {
       if (f.defaultValue) input.value = f.defaultValue;
       if (f.min) input.min = f.min;
       if (f.max) input.max = f.max;
+      if (f.type === 'file') {
+        input.accept = 'image/*';
+        input.classList.add('te-modal-file-input');
+      }
       
       fieldDiv.appendChild(label);
       fieldDiv.appendChild(input);
@@ -105,10 +109,14 @@ export class InputModal {
 
     cancelBtn.addEventListener('click', () => this.close());
     confirmBtn.addEventListener('click', () => {
-      const values: Record<string, string> = {};
+      const values: Record<string, any> = {};
       this.fields.forEach(f => {
         const input = this.container.querySelector(`#${f.id}`) as HTMLInputElement;
-        values[f.id] = input.value;
+        if (f.type === 'file') {
+          values[f.id] = input.files && input.files.length > 0 ? input.files[0] : null;
+        } else {
+          values[f.id] = input.value;
+        }
       });
       this.onConfirm(values);
       this.close();
