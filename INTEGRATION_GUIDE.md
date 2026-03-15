@@ -1,6 +1,6 @@
-# InkFlow Editor: The Ultimate Integration Guide
+# Inkflow Editor: The Ultimate Integration Guide
 
-InkFlow is a high-performance, **28kB (packed)** rich-text editor designed for developers who demand premium aesthetics and robust security without the weight of traditional editors.
+Inkflow is a high-performance, **28kB (packed)** rich-text editor designed for developers who demand premium aesthetics and robust security without the weight of traditional editors.
 
 ---
 
@@ -8,18 +8,18 @@ InkFlow is a high-performance, **28kB (packed)** rich-text editor designed for d
 
 ### Install via NPM
 ```bash
-npm install @meenainwal/rich-text-editor
+npm install inkflow-editor
 ```
 
 ### Import Assets
-InkFlow is exported as an ES Module. You must import both the logic and the styles.
+Inkflow is exported as an ES Module. You must import both the logic and the styles.
 
 ```typescript
 // Main Editor Class
-import { InkFlowEditor } from '@meenainwal/rich-text-editor';
+import { InkflowEditor } from 'inkflow-editor';
 
 // Essential Styles (includes Slate & Indigo design)
-import '@meenainwal/rich-text-editor/style';
+import 'inkflow-editor/style';
 ```
 
 ---
@@ -27,7 +27,7 @@ import '@meenainwal/rich-text-editor/style';
 ## 2. Step-by-Step Initialization
 
 ### Step A: Prepare the Container
-Create a `div` in your HTML. InkFlow will automatically handle responsive sizing.
+Create a `div` in your HTML. Inkflow will automatically handle responsive sizing.
 
 ```html
 <div id="editor-container" style="max-width: 800px; margin: 20px auto;"></div>
@@ -37,7 +37,7 @@ Create a `div` in your HTML. InkFlow will automatically handle responsive sizing
 Initialize with a simple configuration.
 
 ```typescript
-const editor = new InkFlowEditor(document.getElementById('editor-container'), {
+const editor = new InkflowEditor(document.getElementById('editor-container'), {
   placeholder: 'Type something amazing...',
   autofocus: true
 });
@@ -88,10 +88,10 @@ toolbarItems: ['bold', 'italic', 'heading', 'divider', 'link', 'image', 'table']
 
 ## 5. Visual Excellence: The Theme Engine
 
-InkFlow uses a CSS-variable-based theme engine. You can pass a `theme` object to match your brand.
+Inkflow uses a CSS-variable-based theme engine. You can pass a `theme` object to match your brand.
 
 ```typescript
-const editor = new InkFlowEditor(container, {
+const editor = new InkflowEditor(container, {
   dark: true, // Enable built-in Dark Mode
   theme: {
     primaryColor: '#6366f1',    // Brand identity color
@@ -107,11 +107,11 @@ const editor = new InkFlowEditor(container, {
 
 ## 6. Advanced Image Handling
 
-InkFlow treats images as interactive objects. It supports **Image Resizing**, **Captions**, and **Automatic Pre-upload Compression**.
+Inkflow treats images as interactive objects. It supports **Image Resizing**, **Captions**, and **Automatic Pre-upload Compression**.
 
 ### Implementation Example:
 ```typescript
-const editor = new InkFlowEditor(container, {
+const editor = new InkflowEditor(container, {
   imageEndpoints: {
     upload: 'https://your-api.com/upload',
     delete: 'https://your-api.com/delete'

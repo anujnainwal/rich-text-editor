@@ -107,14 +107,28 @@
 .te-container.te-toolbar-left .te-toolbar,
 .te-container.te-toolbar-right .te-toolbar {
   flex-direction: column;
-  width: auto;
-  min-width: 48px;
+  width: 76px; /* Slightly wider for better dropdown legibility */
   height: 100%;
   border-bottom: none;
   overflow-y: auto;
-  position: relative; /* Not sticky since the container is row-based and height-constrained */
+  position: relative;
   flex-wrap: nowrap;
-  padding: 12px 6px;
+  padding: 16px 6px;
+  align-items: center; 
+  scrollbar-width: thin;
+  scrollbar-color: var(--te-border-color) transparent;
+}
+
+/* Premium Scrollbar for Vertical Sider */
+.te-container.te-toolbar-left .te-toolbar::-webkit-scrollbar,
+.te-container.te-toolbar-right .te-toolbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.te-container.te-toolbar-left .te-toolbar::-webkit-scrollbar-thumb,
+.te-container.te-toolbar-right .te-toolbar::-webkit-scrollbar-thumb {
+  background: var(--te-border-color);
+  border-radius: 4px;
 }
 
 .te-container.te-toolbar-left .te-toolbar {
@@ -138,9 +152,81 @@
 
 .te-container.te-toolbar-left .te-divider,
 .te-container.te-toolbar-right .te-divider {
-  width: 20px;
+  width: 36px;
   height: 1px;
-  margin: 6px 0;
+  margin: 12px 0;
+  opacity: 0.6;
+}
+
+/* Vertical compact styles for select and input */
+.te-container.te-toolbar-left .te-select,
+.te-container.te-toolbar-right .te-select {
+  min-width: 64px;
+  width: 64px;
+  height: 26px;
+  padding: 0 4px;
+  background-image: none; 
+  text-align: center;
+  font-size: 10px;
+  margin-bottom: 6px;
+  border-radius: 13px; /* Pill shape */
+  border-color: var(--te-border-color);
+  background: var(--te-bg-editor) !important;
+  color: var(--te-text-main) !important;
+  box-shadow: var(--te-shadow-sm);
+}
+
+.te-container.te-toolbar-left .te-select:hover,
+.te-container.te-toolbar-right .te-select:hover {
+  border-color: var(--te-primary-main);
+  background: var(--te-bg-editor) !important;
+}
+
+.te-container.te-toolbar-left .te-input,
+.te-container.te-toolbar-right .te-input {
+  width: 64px;
+  height: 26px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  border-radius: 13px;
+  text-align: center;
+  border-color: var(--te-border-color);
+  background: var(--te-bg-editor) !important;
+  box-shadow: var(--te-shadow-sm);
+}
+
+.te-container.te-toolbar-left .te-input:hover,
+.te-container.te-toolbar-right .te-input:hover {
+  border-color: var(--te-primary-main);
+}
+
+/* Logical Item Grouping */
+.te-container.te-toolbar-left .te-button + .te-button,
+.te-container.te-toolbar-right .te-button + .te-button {
+  margin-top: 4px;
+}
+
+/* Status integration in sider */
+.te-container.te-toolbar-left .te-toolbar-status,
+.te-container.te-toolbar-right .te-toolbar-status {
+  flex-direction: column;
+  margin-top: auto;
+  margin-left: 0;
+  padding: 16px 4px;
+  border-top: 1px dashed var(--te-border-color);
+  width: 100%;
+  gap: 14px;
+  align-items: center;
+  font-size: 10px;
+  text-align: center;
+  color: var(--te-text-muted);
+}
+
+.te-container.te-toolbar-left .te-toolbar-status > span,
+.te-container.te-toolbar-right .te-toolbar-status > span {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 .te-container.te-toolbar-floating .te-toolbar {

@@ -1,4 +1,4 @@
-declare module '@meenainwal/rich-text-editor/style' {
+declare module 'inkflow-editor/style' {
   const content: any;
   export default content;
 }

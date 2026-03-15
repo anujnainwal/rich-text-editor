@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
-import { InkFlowEditor } from '../index';
+import { InkflowEditor } from '../index';
 
 describe('QA Bug Fixes', () => {
   let container: HTMLElement;
-  let editor: InkFlowEditor;
+  let editor: InkflowEditor;
 
   beforeEach(() => {
     document.execCommand = vi.fn();
     
     container = document.createElement('div');
     document.body.appendChild(container);
-    editor = new InkFlowEditor(container);
+    editor = new InkflowEditor(container);
     
     // Mock selection
     const mockSelection = {

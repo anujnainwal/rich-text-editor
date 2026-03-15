@@ -2,7 +2,7 @@ import { CoreEditor, EditorOptions } from './core/Editor';
 import { Toolbar } from './ui/Toolbar';
 import './styles/editor.css';
 
-export class InkFlowEditor extends CoreEditor {
+export class InkflowEditor extends CoreEditor {
   private toolbar: Toolbar;
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {

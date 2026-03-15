@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InkFlow Editor Demo</title>
+    <title>Inkflow Editor Demo</title>
     <style>
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -99,7 +99,7 @@
 <body>
     <div class="wrapper">
         <div class="header">
-            <h1>InkFlow Editor</h1>
+            <h1>Inkflow Editor</h1>
             <p class="subtitle">A premium, lightweight editing experience.</p>
         </div>
 
@@ -122,14 +122,13 @@
                 <button id="get-html">Export HTML</button>
             </div>
         </div>
-        </div>
 
         <span class="label">HTML Output</span>
         <div id="html-output" class="output">Click export to view markup...</div>
     </div>
-
     <script type="module">
-        import { InkFlowEditor } from './src/index.ts';
+
+        import { InkflowEditor } from './src/index.ts';
 
         let editor;
 
@@ -139,7 +138,7 @@
                 document.getElementById('editor').innerHTML = '';
             }
 
-            editor = new InkFlowEditor(document.getElementById('editor'), {
+            editor = new InkflowEditor(document.getElementById('editor'), {
                 placeholder: 'Start writing something amazing...',
                 autofocus: true,
                 showCharCount: true,

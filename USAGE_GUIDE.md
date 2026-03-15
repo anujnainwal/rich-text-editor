@@ -1,11 +1,11 @@
-# InkFlow Editor - Usage Guide
+# Inkflow Editor - Usage Guide
 
-InkFlow is a premium, lightweight (~28kB packed), and framework-agnostic WYSIWYG rich text editor. 
+Inkflow is a premium, lightweight (~28kB packed), and framework-agnostic WYSIWYG rich text editor. 
 
 ## Installation
 
 ```bash
-npm install @meenainwal/rich-text-editor
+npm install inkflow-editor
 ```
 
 ## Quick Start
@@ -13,11 +13,11 @@ npm install @meenainwal/rich-text-editor
 Import the editor and its styles to get started.
 
 ```typescript
-import { InkFlowEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/style';
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style';
 
 const container = document.getElementById('editor-container');
-const editor = new InkFlowEditor(container, {
+const editor = new InkflowEditor(container, {
   placeholder: 'Start writing...',
   autofocus: true,
   autoSave: true,
@@ -43,7 +43,7 @@ The `EditorOptions` interface allows you to customize the behavior and look of t
 You can deeply customize the design via the `theme` object:
 
 ```typescript
-new InkFlowEditor(container, {
+new InkflowEditor(container, {
   theme: {
     primaryColor: '#6366f1', // Indigo
     radiusLg: '12px',

@@ -1,13 +1,17 @@
-# @meenainwal/rich-text-editor 🚀 | Premium WYSIWYG Editor
+# inkflow-editor 🚀 | Premium WYSIWYG Editor
 
-[![NPM Downloads](https://img.shields.io/npm/dw/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
-[![NPM Version](https://img.shields.io/npm/v/@meenainwal/rich-text-editor.svg)](https://www.npmjs.com/package/@meenainwal/rich-text-editor)
+[![NPM Downloads](https://img.shields.io/npm/dw/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![NPM Version](https://img.shields.io/npm/v/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![Beta Status](https://img.shields.io/badge/status-beta-orange.svg)](https://www.npmjs.com/package/inkflow-editor)
 
 A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience for React, Next.js, and modern web applications.
 
+> [!IMPORTANT]
+> **Beta Version**: Inkflow is currently in its beta phase. We are actively refining the API and performance. Community feedback is welcome! 🚀
+
 ### 💡 What is WYSIWYG?
 **WYSIWYG** stands for **"What You See Is What You Get"**. 
-Unlike markdown or code editors, what you see while typing in InkFlow—the bold text, centered headings, and interactive tables—is exactly how it will appear when published. It bridges the gap between editing and the final result, making rich-text creation accessible and predictable.
+Unlike markdown or code editors, what you see while typing in Inkflow—the bold text, centered headings, and interactive tables—is exactly how it will appear when published. It bridges the gap between editing and the final result, making rich-text creation accessible and predictable.
 
 ## 🚀 Recent Performance & Security Breakthrough (v1.1.2)
 We recently completed an aggressive optimization and security hardening pass:
@@ -53,7 +57,7 @@ We are currently building a dedicated official website to provide the best possi
 ---
 
 ## 🛡 Security & XSS Protection
-InkFlow takes security seriously. It features a hard-coded strict whitelist in `DOMPurify` to ensure:
+Inkflow takes security seriously. It features a hard-coded strict whitelist in `DOMPurify` to ensure:
 - **Malicious Scripts:** Automatically stripped from pastes and API inputs.
 - **URI Blocking:** Blocks `javascript:`, `data:`, and `vbscript:` schemes.
 - **Link Hardening:** Every link is forced to have `rel="noopener noreferrer"`.
@@ -80,7 +84,7 @@ For deep-dive documentation, check out our local guides:
 ## 📦 Installation
 
 ```bash
-npm install @meenainwal/rich-text-editor
+npm install inkflow-editor
 ```
 
 ## 🚀 Quick Start
@@ -88,11 +92,11 @@ npm install @meenainwal/rich-text-editor
 ### Basic Usage (Vanilla JS)
 
 ```javascript
-import { InkFlowEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/style'; // Simple style import
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style'; // Simple style import
 
 const container = document.getElementById('editor');
-const editor = new InkFlowEditor(container, {
+const editor = new InkflowEditor(container, {
   placeholder: 'Type something beautiful...',
   autofocus: true,
   showStatus: true,
@@ -105,16 +109,16 @@ In React **Strict Mode**, components mount twice in development. Always use the 
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { InkFlowEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/style';
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<InkFlowEditor | null>(null);
+  const editorRef = useRef<InkflowEditor | null>(null);
 
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
-      editorRef.current = new InkFlowEditor(containerRef.current, {
+      editorRef.current = new InkflowEditor(containerRef.current, {
         placeholder: 'Start writing...',
       });
     }
@@ -137,8 +141,8 @@ For Next.js, ensure the editor is only initialized on the client side using `use
 ```tsx
 "use client";
 import { useEffect, useRef } from 'react';
-import { InkFlowEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/style';
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style';
 
 export default function MyEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,7 +150,7 @@ export default function MyEditor() {
   useEffect(() => {
     if (!containerRef.current) return;
     
-    const editor = new InkFlowEditor(containerRef.current, {
+    const editor = new InkflowEditor(containerRef.current, {
       onSave: (html) => console.log(html)
     });
 
@@ -192,6 +196,14 @@ If you see multiple toolbars or editors, it's likely because:
 ---
 
 ## 📝 Patch Notes
+
+### v1.3.0 (The Inkflow Rebrand)
+- **New Name & Package**: Rebranded as **Inkflow** (`inkflow-editor`).
+- **Toolbar Positioning**: Support for `Top`, `Bottom`, `Left`, `Right`, and `Floating` positions.
+- **Premium Table UI**: Redesigned tables with rounded corners, zebra stripes, and better interactive states.
+- **Magic Format 2.0**: Added Typography and Accents themes with a dedicated Reset button.
+- **Refined Sider UI**: Centered vertical toolbars (76px) with pill-shaped controls and premium scrollbars.
+- **Paste Sanitization**: Hardened character limits to prevent bypass via pasting.
 
 ### v1.2.0 (Premium UI & Image Power-Up)
 - **Lucide Icon Upgrade**: Replaced all 27 toolbar icons with high-quality, professional Lucide-styled SVGs.
