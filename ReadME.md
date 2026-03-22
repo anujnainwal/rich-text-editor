@@ -1,83 +1,78 @@
-# inkflow-editor 🚀 | Premium WYSIWYG Editor
+# inkflow-editor ✍️ | Premium WYSIWYG Rich Text Editor
 
-[![NPM Downloads](https://img.shields.io/npm/dw/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
 [![NPM Version](https://img.shields.io/npm/v/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
-[![Beta Status](https://img.shields.io/badge/status-beta-orange.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![NPM Downloads](https://img.shields.io/npm/dw/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![Status](https://img.shields.io/badge/status-early%20experiment-yellow.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![ESM Only](https://img.shields.io/badge/module-ESM%20only-green.svg)](https://www.npmjs.com/package/inkflow-editor)
 
-A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript. Featuring a sophisticated **Slate & Indigo** design system, it provides a flawless writing experience for React, Next.js, and modern web applications.
+> A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript — featuring a polished **Slate & Indigo** design, XSS protection, dynamic toolbar positions, and first-class support for **React**, **Next.js**, and modern web apps.
 
-> [!IMPORTANT]
-> **Beta Version**: Inkflow is currently in its beta phase. We are actively refining the API and performance. Community feedback is welcome! 🚀
-
-### 💡 What is WYSIWYG?
-**WYSIWYG** stands for **"What You See Is What You Get"**. 
-Unlike markdown or code editors, what you see while typing in Inkflow—the bold text, centered headings, and interactive tables—is exactly how it will appear when published. It bridges the gap between editing and the final result, making rich-text creation accessible and predictable.
-
-## 🚀 Recent Performance & Security Breakthrough (v1.1.2)
-We recently completed an aggressive optimization and security hardening pass:
-- **79% Size Reduction:** Packed weight dropped from **132kB to 28kB**.
-- **9.8/10 Security Score:** Internal audit confirmed world-class XSS protection.
-- **Pure ESM Architecture:** Zero legacy CommonJS bloat for modern bundlers.
+> [!NOTE]
+> **v0.1.0 — Early Experiment**: This is the initial public release of Inkflow. The core API is functional and actively being refined. Community feedback is warmly welcomed! 🚀
 
 ---
 
-## 🎮 Live React Preview
-Wanna see it in action? Try the **Interactive React Demo** on StackBlitz:
-[**Run Demo on StackBlitz**](https://stackblitz.com/edit/vitejs-vite-e8u5yntq?embed=1&view=preview)
+## 🖼 Editor Preview
 
-## ✨ Premium Features & Why Choose This Editor?
-
-### 👍 Key Pros & Capabilities
-- **Microscopic Footprint**: Only **~28kB** packed weight. Total initial load is incredibly light.
-- **Secure By Design**: Rated **9.8/10** in security audits with forced XSS sanitization.
-- **Pure ESM Build**: Optimized for modern bundlers (Vite, Webpack 5, etc.) with zero CJS bloat.
-- **Performance Optimized**: Heavy components like the Emoji Picker are **dynamic-imported** only when clicked.
-- **Framework Agnostic**: Native support for **React**, **Next.js**, **Vue**, **Angular**, and **Svelte**.
-- **Auto-Formatting Magic**: Intelligently parses pasted HTML strings into clean, formatted rich text.
-- **Professional UI/UX**: Modern aesthetics curated with a polished Slate & Indigo color palette.
-- **Table Support**: Natively insert and style interactive HTML tables.
-- **Emoji Picker**: Integrated searchable emoji library for expressive content.
-- **Dark Mode**: Sophisticated dark theme for premium developer experiences.
-- **Customizable Toolbar**: Granular control over tool visibility and layout.
-- **Smart Image Management**: Built-in client-side compression (WebP), loading states, custom upload adapters, live resizing, and native captions.
+![Inkflow Editor Preview](./images/editor-preview.png)
 
 ---
 
-## 🌐 Documentation Website (Coming Soon!)
-We are currently building a dedicated official website to provide the best possible developer experience.
+## 💡 What is WYSIWYG?
 
-**What to expect:**
-- **Interactive Playground**: Test all features live in your browser.
-- **Deep-Dive Guides**: Detailed integration steps for React, Next.js, Vue, and more.
-- **Full API Reference**: Comprehensive documentation for every method and option.
-- **Custom Theme Builder**: Visually design your editor's look and feel.
+**WYSIWYG** stands for **"What You See Is What You Get"**.
+Unlike markdown or code editors, what you type in Inkflow — bold text, centered headings, interactive tables — is exactly how it appears when published. It bridges the gap between editing and the final result, making rich-text creation intuitive and predictable.
 
-🚀 **Stay tuned for the official launch!**
+---
+
+## 🎮 Live Demo
+
+Try the **Interactive React Demo** on StackBlitz:
+[**▶ Run Demo on StackBlitz**](https://stackblitz.com/edit/vitejs-vite-e8u5yntq?embed=1&view=preview)
+
+---
+
+## ✨ Features
+
+| Feature                   | Description                                               |
+| :------------------------ | :-------------------------------------------------------- |
+| 🪶 **~28kB packed**       | Microscopic footprint — incredibly fast initial load      |
+| 🔒 **Security 9.8/10**    | Hard-coded XSS sanitization via DOMPurify                 |
+| ⚡ **Pure ESM**           | Zero CJS bloat, optimized for Vite, Webpack 5+            |
+| 🎯 **Framework Agnostic** | React, Next.js, Vue, Angular, Svelte                      |
+| 🌑 **Dark Mode**          | Sophisticated built-in dark theme                         |
+| 📐 **Toolbar Positions**  | Top, Bottom, Left, Right, Floating                        |
+| 📊 **Table Editor**       | Native insert & style interactive HTML tables             |
+| 😊 **Emoji Picker**       | Searchable emoji library (lazy-loaded on demand)          |
+| 🖼 **Image Pipeline**     | Drag-and-drop, WebP compression, resize handles, captions |
+| 🧙 **Magic Format**       | Typography & Accent themes with one-click reset           |
+| 📋 **Smart Paste**        | Auto-formats pasted HTML into clean rich text             |
+| 🧹 **Auto-Save**          | Configurable auto-save with visual "Saved at..." status   |
+
+---
+
+## 🏗 Architecture
+
+Inkflow is built with **Vanilla TypeScript** and zero runtime dependencies (only `dompurify` for security). Key internals:
+
+- **`CoreEditor`** — manages the `contenteditable` element, selection, history, and auto-save
+- **`Toolbar`** — dynamic toolbar with granular item control and 5 position modes
+- **`SelectionManager`** — cross-browser selection and range utilities
+- **`HistoryManager`** — undo/redo with snapshot diffing
+- **`ImageManager`** — client-side WebP compression, upload adapters, and resize handles
 
 ---
 
 ## 🛡 Security & XSS Protection
-Inkflow takes security seriously. It features a hard-coded strict whitelist in `DOMPurify` to ensure:
-- **Malicious Scripts:** Automatically stripped from pastes and API inputs.
-- **URI Blocking:** Blocks `javascript:`, `data:`, and `vbscript:` schemes.
-- **Link Hardening:** Every link is forced to have `rel="noopener noreferrer"`.
-- **Normalization:** Every structural cleanup is followed by a final sanitization pass.
 
----
+Inkflow takes security seriously with a **9.8/10 internal audit score**:
 
-> [!TIP]
-> The editor is optimized for performance. Features like the **Emoji Picker** are only loaded when needed, keeping your initial page load lightning fast.
-
-### 👎 Cons (Current Limitations)
-- Markdown shortcut typing (e.g., typing `#` for H1) is not natively supported yet.
-
----
-
-## 📚 Technical Guides
-For deep-dive documentation, check out our local guides:
-- [**Usage Guide**](./USAGE_GUIDE.md): Configuration, API methods, and feature customization.
-- [**Technical Integration Guide**](./INTEGRATION_GUIDE.md): Step-by-step setup and advanced patterns.
-- [**Security Report**](./SECURITY_REPORT.md): Full breakdown of our XSS protection and hardening.
+- **Auto-sanitizes** all pasted content and API inputs via DOMPurify
+- **Blocks** `javascript:`, `data:`, and `vbscript:` URI schemes
+- **Forces** `rel="noopener noreferrer"` on every link
+- **Eliminates** `innerHTML` usage in all UI rendering (zero-trust approach)
+- **Normalizes** content after every structural change with a final sanitization pass
 
 ---
 
@@ -87,30 +82,35 @@ For deep-dive documentation, check out our local guides:
 npm install inkflow-editor
 ```
 
+---
+
 ## 🚀 Quick Start
 
-### Basic Usage (Vanilla JS)
+### Vanilla JS / TypeScript
 
 ```javascript
-import { InkflowEditor } from 'inkflow-editor';
-import 'inkflow-editor/style'; // Simple style import
+import { InkflowEditor } from "inkflow-editor";
+import "inkflow-editor/style";
 
-const container = document.getElementById('editor');
+const container = document.getElementById("editor");
 const editor = new InkflowEditor(container, {
-  placeholder: 'Type something beautiful...',
+  placeholder: "Type something beautiful...",
   autofocus: true,
   showStatus: true,
-  toolbarItems: ['bold', 'italic', 'heading', 'table', 'link'] // Customize tools
+  toolbarItems: ["bold", "italic", "heading", "table", "link"],
 });
 ```
 
-### In React (Preventing Duplicates)
-In React **Strict Mode**, components mount twice in development. Always use the cleanup function to destroy the editor instance.
+---
+
+### React
+
+In React **Strict Mode**, components mount twice in development. Always call `destroy()` in the cleanup function.
 
 ```tsx
-import { useEffect, useRef } from 'react';
-import { InkflowEditor } from 'inkflow-editor';
-import 'inkflow-editor/style';
+import { useEffect, useRef } from "react";
+import { InkflowEditor } from "inkflow-editor";
+import "inkflow-editor/style";
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,15 +119,12 @@ export default function App() {
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
       editorRef.current = new InkflowEditor(containerRef.current, {
-        placeholder: 'Start writing...',
+        placeholder: "Start writing...",
       });
     }
-
     return () => {
-      if (editorRef.current) {
-        editorRef.current.destroy();
-        editorRef.current = null;
-      }
+      editorRef.current?.destroy();
+      editorRef.current = null;
     };
   }, []);
 
@@ -135,25 +132,24 @@ export default function App() {
 }
 ```
 
-### In Next.js (Safe Implementation)
-For Next.js, ensure the editor is only initialized on the client side using `useEffect`.
+---
+
+### Next.js
 
 ```tsx
 "use client";
-import { useEffect, useRef } from 'react';
-import { InkflowEditor } from 'inkflow-editor';
-import 'inkflow-editor/style';
+import { useEffect, useRef } from "react";
+import { InkflowEditor } from "inkflow-editor";
+import "inkflow-editor/style";
 
 export default function MyEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
     const editor = new InkflowEditor(containerRef.current, {
-      onSave: (html) => console.log(html)
+      onSave: (html) => console.log(html),
     });
-
     return () => editor.destroy(); // Crucial for HMR and Strict Mode
   }, []);
 
@@ -165,63 +161,77 @@ export default function MyEditor() {
 
 ## ⚙️ Configuration Options
 
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `placeholder` | `string` | `undefined` | The placeholder text when the editor is empty. |
-| `autofocus` | `boolean` | `false` | Focus the editor automatically on initialization. |
-| `dark` | `boolean` | `false` | Enable sophisticated Dark Mode theme. |
-| `showStatus` | `boolean` | `true` | Show/hide the "Saved at..." status in the toolbar. |
-| `toolbarItems` | `string[]` | `all` | Array of tool IDs to display (e.g., `['bold', 'table']`). |
-| `onSave` | `function` | `undefined` | Callback triggered when content is saved. |
-| `autoSaveInterval` | `number` | `1000` | Delay in ms before auto-save triggers after typing. |
-| `imageEndpoints` | `object` | `undefined` | Custom upload endpoint configuration: `{ upload: string }`. |
-| `cloudinaryFallback` | `object` | `undefined` | Cloudinary settings: `{ cloudName: string, uploadPreset: string }`. |
-| `maxImageSizeMB` | `number` | `5` | Maximum image size in MB (enforced pre and post compression). |
-
-## 🛠 API Methods
-
-- `destroy()`: **Crucial** - Cleans up DOM, event listeners, and memory leaks.
-- `getHTML()`: Returns the content as a sanitized HTML string.
-- `setHTML(html)`: Programmatically sets the editor content.
-- `focus()`: Forces focus onto the editor.
-- `setDarkMode(boolean)`: Dynamically toggle dark mode.
-- `insertTable(rows, cols)`: Programmatically insert a table.
-- `insertImage(url, id, isLoading)`: Programmatically insert an image with optional loading state.
-
-## 💡 Troubleshooting: Duplicate Editors?
-If you see multiple toolbars or editors, it's likely because:
-1. **React Strict Mode**: Ensure you call `editor.destroy()` in the `useEffect` cleanup.
-2. **Missing Cleanup**: The editor injects elements into the DOM; if you don't destroy it when the component unmounts, those elements remain.
+| Option               | Type       | Default     | Description                                                    |
+| :------------------- | :--------- | :---------- | :------------------------------------------------------------- |
+| `placeholder`        | `string`   | `undefined` | Placeholder text when the editor is empty                      |
+| `autofocus`          | `boolean`  | `false`     | Auto-focus the editor on init                                  |
+| `dark`               | `boolean`  | `false`     | Enable dark mode theme                                         |
+| `showStatus`         | `boolean`  | `true`      | Show/hide the "Saved at..." status bar                         |
+| `showCharCount`      | `boolean`  | `false`     | Show character/word count metrics                              |
+| `toolbarItems`       | `string[]` | all         | Array of tool IDs to display                                   |
+| `toolbarPosition`    | `string`   | `'top'`     | Toolbar position: `top`, `bottom`, `left`, `right`, `floating` |
+| `onSave`             | `function` | `undefined` | Callback when content is saved (`(html: string) => void`)      |
+| `onSaving`           | `function` | `undefined` | Callback when auto-save is triggered                           |
+| `autoSaveInterval`   | `number`   | `1000`      | Debounce delay in ms before auto-save fires                    |
+| `imageEndpoints`     | `object`   | `undefined` | Custom upload endpoint: `{ upload: string }`                   |
+| `cloudinaryFallback` | `object`   | `undefined` | Cloudinary fallback: `{ cloudName, uploadPreset }`             |
+| `maxImageSizeMB`     | `number`   | `5`         | Max image size in MB (enforced pre and post compression)       |
 
 ---
 
-## 📝 Patch Notes
+## 🛠 API Methods
 
-### v1.3.0 (The Inkflow Rebrand)
-- **New Name & Package**: Rebranded as **Inkflow** (`inkflow-editor`).
-- **Toolbar Positioning**: Support for `Top`, `Bottom`, `Left`, `Right`, and `Floating` positions.
-- **Premium Table UI**: Redesigned tables with rounded corners, zebra stripes, and better interactive states.
-- **Magic Format 2.0**: Added Typography and Accents themes with a dedicated Reset button.
-- **Refined Sider UI**: Centered vertical toolbars (76px) with pill-shaped controls and premium scrollbars.
-- **Paste Sanitization**: Hardened character limits to prevent bypass via pasting.
+| Method                            | Description                                                   |
+| :-------------------------------- | :------------------------------------------------------------ |
+| `destroy()`                       | **Required on unmount.** Cleans up DOM, listeners, and memory |
+| `getHTML()`                       | Returns sanitized HTML string of the editor content           |
+| `setHTML(html)`                   | Programmatically sets editor content                          |
+| `focus()`                         | Forces focus onto the editor                                  |
+| `setDarkMode(boolean)`            | Dynamically toggle dark mode                                  |
+| `insertTable(rows, cols)`         | Programmatically insert a table                               |
+| `insertImage(url, id, isLoading)` | Insert an image with optional loading state                   |
+| `getToolbar()`                    | Returns the `Toolbar` instance                                |
 
-### v1.2.0 (Premium UI & Image Power-Up)
-- **Lucide Icon Upgrade**: Replaced all 27 toolbar icons with high-quality, professional Lucide-styled SVGs.
-- **Initialization Loader**: Added a sophisticated shimmering glassmorphism loader for a smoother startup experience.
-- **Advanced Image Pipeline**: Added drag-and-drop support with automatic client-side **WebP compression**.
-- **Interactive UX**: Added loading state previews, 4-corner resizing handles, and native `<figcaption>` support.
-- **Glassmorphism Design**: Enhanced modals and loaders with modern backdrop-blur effects.
+---
 
-### v1.1.2 (Security & Performance)
-- **Aggressive Size Optimization**: Reduced packed size to **28kB** by moving to ESM-only and pruning datasets.
-- **Hardened Sanitization**: Centralized all HTML processing through a unified security layer (Rating 9.8/10).
-- **Safe UI Rendering**: Eliminated `innerHTML` usage in all UI components for zero-trust text rendering.
-- **CJS Build Deprecation**: Removed CommonJS versions to optimize for modern ESM-based environments.
+## 🔧 Toolbar Positions
 
-### v1.1.1 (Quick Fixes)
-- Fixed missing `destroy()` export.
-- Resolved memory leaks in image resizer.
-- Prevented duplicate editors in React Strict Mode.
+Inkflow supports **5 toolbar layout modes**:
+
+```ts
+new InkflowEditor(container, {
+  toolbarPosition: 'top'      // Default — above the editor
+  toolbarPosition: 'bottom'   // Below the editor
+  toolbarPosition: 'left'     // Vertical sidebar, left
+  toolbarPosition: 'right'    // Vertical sidebar, right
+  toolbarPosition: 'floating' // Context-aware floating toolbar
+});
+```
+
+---
+
+## 💡 Troubleshooting
+
+**Seeing duplicate editors or toolbars?**
+
+1. **React Strict Mode**: Ensure `editor.destroy()` is called in the `useEffect` cleanup.
+2. **Missing cleanup**: The editor injects elements into the DOM — always destroy on unmount.
+
+**Editor not initializing in Next.js?**
+
+- Make sure the component has `"use client"` and wraps initialization inside `useEffect`.
+
+## 📝 Changelog
+
+### v0.1.0 — Initial Experiment _(current)_
+
+- 🎉 First public release of **Inkflow Editor** under the `inkflow-editor` package name
+- Toolbar positions: `top`, `bottom`, `left`, `right`, `floating`
+- Premium Table UI with rounded corners, zebra stripes, and interactive states
+- Magic Format 2.0: Typography & Accents themes with a dedicated Reset button
+- Refined vertical sidebar toolbars (76px) with pill-shaped controls
+- Hardened paste sanitization to prevent character limit bypasses
+- ~28kB packed weight, Pure ESM architecture
 
 ---
 
