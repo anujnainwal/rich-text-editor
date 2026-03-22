@@ -17,9 +17,9 @@
     },
     "./style": {
       "types": "./dist/style.d.ts",
-      "default": "./dist/rich-text-editor.css"
+      "default": "./dist/inkflow.css"
     },
-    "./dist/rich-text-editor.css": "./dist/rich-text-editor.css"
+    "./dist/inkflow.css": "./dist/inkflow.css"
   },
   "scripts": {
     "dev": "vite",

@@ -472,21 +472,21 @@
   overflow-y: auto;
   min-height: 240px;
   padding: 24px;
-  line-height: 1.25;
+  line-height: 1;
   outline: none;
   font-size: 16px;
   position: relative;
 }
 
 .te-content p {
-  margin: 0 0 1.25em 0;
+  margin: 0 0 1em 0;
 }
 
 .te-content h1, .te-content h2, .te-content h3, .te-content h4, .te-content h5, .te-content h6 {
   color: var(--te-text-main) !important;
   font-weight: 700;
-  margin: 1rem 0 0.5rem 0;
-  line-height: 1.1;
+  margin: 1.5rem 0 0.75rem 0;
+  line-height: 1;
 }
 
 .te-content h1:first-child, .te-content p:first-child {
@@ -497,6 +497,8 @@
 .te-content h2 { font-size: 1.875em; }
 .te-content h3 { font-size: 1.5em; }
 .te-content h4 { font-size: 1.25em; }
+.te-content h5 { font-size: 1.1rem; }
+.te-content h6 { font-size: 1rem; }
 
 .te-content[data-placeholder].is-empty::before {
   content: attr(data-placeholder);

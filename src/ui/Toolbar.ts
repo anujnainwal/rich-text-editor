@@ -327,6 +327,7 @@ export class Toolbar {
       }
     });
 
+    this.itemElements.set(item, input);
     this.container.appendChild(input);
   }
 
@@ -364,6 +365,7 @@ export class Toolbar {
       this.savedRange = this.editor.selection.saveSelection();
     });
 
+    this.itemElements.set(item, select);
     this.container.appendChild(select);
   }
 
@@ -433,6 +435,11 @@ export class Toolbar {
   }
 
   private updateActiveStates(): void {
+    const selection = window.getSelection();
+    const anchorNode = selection?.anchorNode;
+    const parent = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode as HTMLElement : anchorNode?.parentElement;
+    const inEditor = parent && this.editor.el.contains(parent);
+
     this.items.forEach((item) => {
       const element = this.itemElements.get(item);
       if (!element) return;
@@ -443,6 +450,41 @@ export class Toolbar {
         } else {
           element.classList.remove('active');
         }
+      } else if (item.type === 'select' && inEditor) {
+        const select = element as HTMLSelectElement;
+        if (item.command === 'formatBlock') {
+          const val = document.queryCommandValue('formatBlock');
+          if (val) select.value = val.toLowerCase();
+        } else if (item.command === 'fontFamily') {
+          const font = window.getComputedStyle(parent).fontFamily.replace(/['"]/g, '');
+          const firstFont = font.split(',')[0].trim();
+          // Find the option that starts with this font name to handle fallbacks
+          for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value.toLowerCase().includes(firstFont.toLowerCase())) {
+              select.selectedIndex = i;
+              break;
+            }
+          }
+        } else if (item.command === 'lineHeight') {
+          // Normalizing line-height detection is tricky, but let's try matching numeric values
+          const lh = window.getComputedStyle(parent).lineHeight;
+          const fs = window.getComputedStyle(parent).fontSize;
+          if (lh && fs && lh !== 'normal') {
+            const ratio = (parseFloat(lh) / parseFloat(fs)).toFixed(1);
+            for (let i = 0; i < select.options.length; i++) {
+              if (select.options[i].value === ratio) {
+                select.selectedIndex = i;
+                break;
+              }
+            }
+          } else if (lh === 'normal') {
+            select.value = 'normal';
+          }
+        }
+      } else if (item.type === 'input' && item.command === 'fontSize' && inEditor) {
+        const input = element as HTMLInputElement;
+        const size = window.getComputedStyle(parent).fontSize;
+        if (size) input.value = parseInt(size, 10).toString();
       }
     });
   }
