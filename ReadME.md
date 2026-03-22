@@ -1,10 +1,10 @@
-# inkflow-editor ✍️ | Premium WYSIWYG Rich Text Editor
+# inkflow ✍️ | Premium WYSIWYG Rich Text Editor
 
-[![NPM Version](https://img.shields.io/npm/v/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
-[![NPM Downloads](https://img.shields.io/npm/dw/inkflow-editor.svg)](https://www.npmjs.com/package/inkflow-editor)
-[![Status](https://img.shields.io/badge/status-early%20experiment-yellow.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![NPM Version](https://img.shields.io/npm/v/inkflow.svg)](https://www.npmjs.com/package/inkflow)
+[![NPM Downloads](https://img.shields.io/npm/dw/inkflow.svg)](https://www.npmjs.com/package/inkflow)
+[![Status](https://img.shields.io/badge/status-early%20experiment-yellow.svg)](https://www.npmjs.com/package/inkflow)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![ESM Only](https://img.shields.io/badge/module-ESM%20only-green.svg)](https://www.npmjs.com/package/inkflow-editor)
+[![ESM Only](https://img.shields.io/badge/module-ESM%20only-green.svg)](https://www.npmjs.com/package/inkflow)
 
 > A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript — featuring a polished **Slate & Indigo** design, XSS protection, dynamic toolbar positions, and first-class support for **React**, **Next.js**, and modern web apps.
 
@@ -15,7 +15,7 @@
 
 ## 🖼 Editor Preview
 
-![Inkflow Editor Preview](./images/editor-preview.png)
+![Inkflow Editor Preview](https://raw.githubusercontent.com/anujnainwal/rich-text-editor/master/images/editor-preview.png)
 
 ---
 
@@ -79,7 +79,7 @@ Inkflow takes security seriously with a **9.8/10 internal audit score**:
 ## 📦 Installation
 
 ```bash
-npm install inkflow-editor
+npm install inkflow
 ```
 
 ---
@@ -89,8 +89,8 @@ npm install inkflow-editor
 ### Vanilla JS / TypeScript
 
 ```javascript
-import { InkflowEditor } from "inkflow-editor";
-import "inkflow-editor/style";
+import { InkflowEditor } from "inkflow";
+import "inkflow/style";
 
 const container = document.getElementById("editor");
 const editor = new InkflowEditor(container, {
@@ -109,8 +109,8 @@ In React **Strict Mode**, components mount twice in development. Always call `de
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { InkflowEditor } from "inkflow-editor";
-import "inkflow-editor/style";
+import { InkflowEditor } from "inkflow";
+import "inkflow/style";
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,8 +139,8 @@ export default function App() {
 ```tsx
 "use client";
 import { useEffect, useRef } from "react";
-import { InkflowEditor } from "inkflow-editor";
-import "inkflow-editor/style";
+import { InkflowEditor } from "inkflow";
+import "inkflow/style";
 
 export default function MyEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -225,7 +225,7 @@ new InkflowEditor(container, {
 
 ### v0.1.0 — Initial Experiment _(current)_
 
-- 🎉 First public release of **Inkflow Editor** under the `inkflow-editor` package name
+- 🎉 First public release of **Inkflow Editor** under the `inkflow` package name
 - Toolbar positions: `top`, `bottom`, `left`, `right`, `floating`
 - Premium Table UI with rounded corners, zebra stripes, and interactive states
 - Magic Format 2.0: Typography & Accents themes with a dedicated Reset button
