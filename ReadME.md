@@ -15,7 +15,7 @@
 
 ## 🖼 Editor Preview
 
-![Inkflow Editor Preview](https://raw.githubusercontent.com/anujnainwal/rich-text-editor/master/images/editor-preview.png)
+![Inkflow Editor Preview](https://res.cloudinary.com/dsk6tf2jb/image/upload/v1774157808/inkflow%20editor/editor-preview_vti5wi.png)
 
 ---
 

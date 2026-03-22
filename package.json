@@ -1,6 +1,6 @@
 {
   "name": "inkflow",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
   "files": [
