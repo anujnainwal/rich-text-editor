@@ -8,7 +8,7 @@ Inkflow is a high-performance, **28kB (packed)** rich-text editor designed for d
 
 ### Install via NPM
 ```bash
-npm install inkflow-editor
+npm install inkflow
 ```
 
 ### Import Assets
@@ -16,10 +16,10 @@ Inkflow is exported as an ES Module. You must import both the logic and the styl
 
 ```typescript
 // Main Editor Class
-import { InkflowEditor } from 'inkflow-editor';
+import { InkflowEditor } from 'inkflow';
 
 // Essential Styles (includes Slate & Indigo design)
-import 'inkflow-editor/style';
+import 'inkflow/style';
 ```
 
 ---

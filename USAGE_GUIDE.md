@@ -5,7 +5,7 @@ Inkflow is a premium, lightweight (~28kB packed), and framework-agnostic WYSIWYG
 ## Installation
 
 ```bash
-npm install inkflow-editor
+npm install inkflow
 ```
 
 ## Quick Start
@@ -13,8 +13,8 @@ npm install inkflow-editor
 Import the editor and its styles to get started.
 
 ```typescript
-import { InkflowEditor } from 'inkflow-editor';
-import 'inkflow-editor/style';
+import { InkflowEditor } from 'inkflow';
+import 'inkflow/style';
 
 const container = document.getElementById('editor-container');
 const editor = new InkflowEditor(container, {

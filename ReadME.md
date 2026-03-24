@@ -1,4 +1,8 @@
-# inkflow ✍️ | Premium WYSIWYG Rich Text Editor
+<p align="center">
+  <img src="public/branding/logo.png" width="150" alt="Inkflow Logo">
+</p>
+
+# Inkflow: The Premium WYSIWYG Rich Text Editor for Modern Web Apps ✍️
 
 [![NPM Version](https://img.shields.io/npm/v/inkflow.svg)](https://www.npmjs.com/package/inkflow)
 [![NPM Downloads](https://img.shields.io/npm/dw/inkflow.svg)](https://www.npmjs.com/package/inkflow)
@@ -30,6 +34,17 @@ Unlike markdown or code editors, what you type in Inkflow — bold text, centere
 
 Try the **Interactive React Demo** on StackBlitz:
 [**▶ Run Demo on StackBlitz**](https://stackblitz.com/edit/vitejs-vite-e8u5yntq?embed=1&view=preview)
+
+---
+
+## 🚀 Why Choose Inkflow?
+
+Inkflow is designed for developers who need a **high-performance, secure, and beautiful editor** without the complexity of traditional rich-text frameworks.
+
+- **🎨 Sophisticated Design**: Built with a native **Slate & Indigo** theme, Inkflow feels premium out-of-the-box.
+- **🔒 Security-First**: Every keystroke path is hardened with **DOMPurify**, making it one of the most secure editors available.
+- **⚛️ Framework Ready**: Seamlessly integrates with **React**, **Next.js (SSR-safe)**, and **TypeScript**.
+- **📏 Ultra-Lightweight**: At just **~28kB**, it won't bloat your bundle size.
 
 ---
 
@@ -223,13 +238,14 @@ new InkflowEditor(container, {
 
 ## 📝 Changelog
 
-### v0.1.3 — Style & Stability Patch _(current)_
+### v0.1.4 — UI Alignment Patch _(current)_
 
-- 🎨 **Fixed Styling Issue**: Resolved a critical issue where the editor would appear unstyled due to incorrect CSS export paths in `package.json`. Corrected the path to `@inkflow/dist/inkflow.css`.
-- 📦 **Unified Naming**: Standardized all references and imports to use the `inkflow` package name (replaces `@meenainwal/rich-text-editor`).
-- 📁 **Distribution Fix**: Ensured all build artifacts in the `dist/` folder are correctly linked and accessible for third-party integrations.
-- 🐧 **Linux Support**: Refined build scripts for better compatibility across Linux/macOS environments.
-- 🧩 **Client Alignment**: Updated the React `client` demo for seamless local development and dependency resolution.
+- 📏 **Forced Left-Alignment**: Explicitly set `text-align: left` and `justify-content: flex-start` in the library's core CSS. This prevents the editor from inheriting unwanted centering styles from the host application environment.
+- 🛠 **UI Stability**: Ensured that toolbar items and editable areas maintain consistent positioning across different screen sizes and parent container configurations.
+
+### v0.1.3 — Style & Stability Patch
+
+- 🎨 **Fixed Styling Issue**: Resolved a critical issue where the editor would appear unstyled due to incorrect CSS export paths in `package.json`. Corrected the path to `inkflow/dist/inkflow.css`.
 
 ### v0.1.0 — Initial Experiment
 

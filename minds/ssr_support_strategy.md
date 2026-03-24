@@ -1,6 +1,6 @@
 # Server-Side Rendering (SSR) Strategy for Next.js
 
-When using `@meenainwal/rich-text-editor` in a Next.js environment (especially with the App Router), you must account for the fact that the editor relies heavily on browser-only APIs (`window`, `document`, `HTMLElement`).
+When using `@inkflow/rich-text-editor` in a Next.js environment (especially with the App Router), you must account for the fact that the editor relies heavily on browser-only APIs (`window`, `document`, `HTMLElement`).
 
 ## 1. Why direct instantiation fails
 If you try to initialize the editor in the body of a React component that runs on the server, Next.js will throw an error like `ReferenceError: document is not defined`.
@@ -21,8 +21,8 @@ The safest way to initialize the editor is inside a `useEffect` hook. This ensur
 'use client'; // Required for Next.js App Router
 
 import { useEffect, useRef } from 'react';
-import { TestEditor } from '@meenainwal/rich-text-editor';
-import '@meenainwal/rich-text-editor/style';
+import { TestEditor } from '@inkflow/rich-text-editor';
+import '@inkflow/rich-text-editor/style';
 
 export default function EditorComponent() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,4 +79,4 @@ To make the library even more "bullet-proof", we plan to:
 ---
 
 ## 4. Troubleshooting Next.js Config
-If you encounter "Module not found" errors for `@meenainwal/rich-text-editor/style`, ensure you are using at least Next.js 13+ which supports the `exports` field in `package.json` natively.
+If you encounter "Module not found" errors for `@inkflow/rich-text-editor/style`, ensure you are using at least Next.js 13+ which supports the `exports` field in `package.json` natively.

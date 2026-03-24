@@ -24,7 +24,7 @@ After the successful launch of Phase 1, Phase 2 focuses on turning the editor in
 *   **Cell Formatting**: Basic styling within table cells.
 
 ### 5. Framework Adapters (React/Next.js)
-*   **Official React Wrapper**: A dedicated `@meenainwal/rich-text-editor-react` package.
+*   **Official React Wrapper**: A dedicated `@inkflow/rich-text-editor-react` package.
 *   **Component Hooks**: `useEditor` hook for easier state management and event binding.
 
 ## 🛠 Technical Goals

@@ -4,7 +4,7 @@ Phase 1 successfully transformed a basic `contenteditable` idea into a professio
 
 ## 🏆 Key Achievements
 
-- **@meenainwal/rich-text-editor@1.0.0**: Successfully published to the NPM registry.
+- **@inkflow/rich-text-editor@1.0.0**: Successfully published to the NPM registry.
 - **Premium UI**: Implemented a Slate & Indigo design system with refined geometry and smooth transitions.
 - **Advanced Styling Engine**: Custom `setStyle` logic for precise font-size (px) and font-family control.
 - **Selection Persistence**: Robust selection capturing on `mousedown` to prevent focus loss during formatting.

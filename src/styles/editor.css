@@ -70,6 +70,7 @@
   transition: var(--te-transition);
   max-width: 100%;
   position: relative; /* Ensure children like the loader are contained */
+  text-align: left; /* Force left alignment by default */
 }
 
 .te-container:focus-within {
@@ -89,6 +90,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  justify-content: flex-start; /* Ensure items start from left */
 }
 
 .te-container.te-toolbar-bottom .te-toolbar {
@@ -476,6 +478,7 @@
   outline: none;
   font-size: 16px;
   position: relative;
+  text-align: left; /* Ensure content is left-aligned */
 }
 
 .te-content p {

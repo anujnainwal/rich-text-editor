@@ -1,4 +1,4 @@
-import { CoreEditor } from '@meenainwal/rich-text-editor';
+import { CoreEditor } from '@inkflow/rich-text-editor';
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!DOCTYPE html><div id="editor"></div>');

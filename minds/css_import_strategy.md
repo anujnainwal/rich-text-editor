@@ -1,15 +1,15 @@
 # CSS Import Strategy for NPM Consumers
 
-When publishing a UI library like `@meenainwal/rich-text-editor`, handling CSS imports is a critical part of the developer experience (DX). By default, Vite extracts CSS into a separate file (`dist/rich-text-editor.css`), which requires manual importing by the user.
+When publishing a UI library like `@inkflow/rich-text-editor`, handling CSS imports is a critical part of the developer experience (DX). By default, Vite extracts CSS into a separate file (`dist/rich-text-editor.css`), which requires manual importing by the user.
 
 ## 1. Current Manual Approach
 
 Users currently need to import the CSS manually in their main entry file:
 
 ```javascript
-import { TestEditor } from '@meenainwal/rich-text-editor';
+import { TestEditor } from '@inkflow/rich-text-editor';
 // Manual import required
-import '@meenainwal/rich-text-editor/dist/rich-text-editor.css';
+import '@inkflow/rich-text-editor/dist/rich-text-editor.css';
 ```
 
 ### Pros
@@ -68,7 +68,7 @@ Add a `./style` export:
 ### Usage
 Users can then simply do:
 ```javascript
-import '@meenainwal/rich-text-editor/style';
+import '@inkflow/rich-text-editor/style';
 ```
 
 ---

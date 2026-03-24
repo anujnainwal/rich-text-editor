@@ -3,7 +3,7 @@
 This document outlines the strategy for providing a dedicated server-side entry point for the editor, specifically optimized for Next.js environments (Server Components, Server Actions, and Route Handlers).
 
 ## 🎯 Objectives
-- Provide a `@meenainwal/rich-text-editor/server` entry point.
+- Provide a `@inkflow/rich-text-editor/server` entry point.
 - Enable high-performance HTML sanitization and normalization on the server.
 - Support metadata extraction for SEO and pre-filling social tags.
 - prevent client-side bloat by isolating server-only dependencies.

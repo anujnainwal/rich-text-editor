@@ -1,6 +1,6 @@
 {
   "name": "inkflow",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
   "files": [
@@ -53,7 +53,11 @@
     "table-editor",
     "emoji-picker",
     "dark-mode",
-    "lightweight-editor"
+    "lightweight-editor",
+    "ssr-safe",
+    "slate-design",
+    "indigo-theme",
+    "xss-protection"
   ],
   "author": "Anuj Nainwal",
   "license": "MIT",
