@@ -223,7 +223,15 @@ new InkflowEditor(container, {
 
 ## 📝 Changelog
 
-### v0.1.0 — Initial Experiment _(current)_
+### v0.1.3 — Style & Stability Patch _(current)_
+
+- 🎨 **Fixed Styling Issue**: Resolved a critical issue where the editor would appear unstyled due to incorrect CSS export paths in `package.json`. Corrected the path to `@inkflow/dist/inkflow.css`.
+- 📦 **Unified Naming**: Standardized all references and imports to use the `inkflow` package name (replaces `@meenainwal/rich-text-editor`).
+- 📁 **Distribution Fix**: Ensured all build artifacts in the `dist/` folder are correctly linked and accessible for third-party integrations.
+- 🐧 **Linux Support**: Refined build scripts for better compatibility across Linux/macOS environments.
+- 🧩 **Client Alignment**: Updated the React `client` demo for seamless local development and dependency resolution.
+
+### v0.1.0 — Initial Experiment
 
 - 🎉 First public release of **Inkflow Editor** under the `inkflow` package name
 - Toolbar positions: `top`, `bottom`, `left`, `right`, `floating`

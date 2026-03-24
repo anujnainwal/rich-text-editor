@@ -1,6 +1,6 @@
 {
   "name": "inkflow",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
   "files": [
@@ -23,7 +23,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc -p tsconfig.types.json && cp src/style.d.ts dist/style.d.ts && sed -i '' '/import.*\\.css/d' dist/index.d.ts",
+    "build": "vite build && tsc -p tsconfig.types.json && cp src/style.d.ts dist/style.d.ts && sed -i '/import.*\\.css/d' dist/index.d.ts",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
