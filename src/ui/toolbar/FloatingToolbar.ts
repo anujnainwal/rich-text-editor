@@ -52,6 +52,13 @@ export class FloatingToolbar {
       btn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        
+        // Save current selection before command execution
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          this.savedRange = selection.getRangeAt(0).cloneRange();
+        }
+        
         this.handleCommand(item);
       };
 
@@ -94,13 +101,37 @@ export class FloatingToolbar {
       );
       this.activeModal.show(this.container);
     } else if (item.id === 'heading') {
+      if (this.savedRange) {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(this.savedRange);
+        }
+      }
       this.editor.execute('formatBlock', 'H2');
+      this.savedRange = null;
     } else if (item.id === 'highlight-color') {
-      // Apply a default highlight color for quick access in floating toolbar
+      if (this.savedRange) {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(this.savedRange);
+        }
+      }
       this.editor.execute('backColor', '#fef08a');
+      this.savedRange = null;
     } else {
+      if (this.savedRange) {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(this.savedRange);
+        }
+      }
       this.editor.execute(item.command || '', item.value);
+      this.savedRange = null;
     }
+    this.hide();
   }
 
   private setupListeners() {

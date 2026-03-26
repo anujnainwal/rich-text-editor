@@ -1,19 +1,18 @@
 <p align="center">
-  <img src="public/branding/logo.png" width="150" alt="Inkflow Logo">
+  <img src="branding/logo.png" width="150" alt="Inkflow Logo">
 </p>
 
 # Inkflow: The Premium WYSIWYG Rich Text Editor for Modern Web Apps ✍️
 
 [![NPM Version](https://img.shields.io/npm/v/inkflow.svg)](https://www.npmjs.com/package/inkflow)
-[![NPM Downloads](https://img.shields.io/npm/dw/inkflow.svg)](https://www.npmjs.com/package/inkflow)
-[![Status](https://img.shields.io/badge/status-early%20experiment-yellow.svg)](https://www.npmjs.com/package/inkflow)
+[![CI Status](https://github.com/anujnainwal/rich-text-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/anujnainwal/rich-text-editor/actions)
+[![Open Issues](https://img.shields.io/github/issues/anujnainwal/rich-text-editor.svg)](https://github.com/anujnainwal/rich-text-editor/issues)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![ESM Only](https://img.shields.io/badge/module-ESM%20only-green.svg)](https://www.npmjs.com/package/inkflow)
+[![Security Policy](https://img.shields.io/badge/security-policy-green.svg)](./SECURITY.md)
 
 > A premium, ultra-lightweight, and framework-agnostic **WYSIWYG rich text editor** built entirely with Vanilla TypeScript — featuring a polished **Slate & Indigo** design, XSS protection, dynamic toolbar positions, and first-class support for **React**, **Next.js**, and modern web apps.
 
-> [!NOTE]
-> **v0.1.0 — Early Experiment**: This is the initial public release of Inkflow. The core API is functional and actively being refined. Community feedback is warmly welcomed! 🚀
+> **v0.1.5 — Stable Release**: This is the current stable release of Inkflow.
 
 ---
 
@@ -44,26 +43,27 @@ Inkflow is designed for developers who need a **high-performance, secure, and be
 - **🎨 Sophisticated Design**: Built with a native **Slate & Indigo** theme, Inkflow feels premium out-of-the-box.
 - **🔒 Security-First**: Every keystroke path is hardened with **DOMPurify**, making it one of the most secure editors available.
 - **⚛️ Framework Ready**: Seamlessly integrates with **React**, **Next.js (SSR-safe)**, and **TypeScript**.
-- **📏 Ultra-Lightweight**: At just **~28kB**, it won't bloat your bundle size.
+- **📏 Ultra-Lightweight**: At just **~30kB**, it won't bloat your bundle size.
 
 ---
 
 ## ✨ Features
 
-| Feature                   | Description                                               |
-| :------------------------ | :-------------------------------------------------------- |
-| 🪶 **~28kB packed**       | Microscopic footprint — incredibly fast initial load      |
-| 🔒 **Security 9.8/10**    | Hard-coded XSS sanitization via DOMPurify                 |
-| ⚡ **Pure ESM**           | Zero CJS bloat, optimized for Vite, Webpack 5+            |
-| 🎯 **Framework Agnostic** | React, Next.js, Vue, Angular, Svelte                      |
-| 🌑 **Dark Mode**          | Sophisticated built-in dark theme                         |
-| 📐 **Toolbar Positions**  | Top, Bottom, Left, Right, Floating                        |
-| 📊 **Table Editor**       | Native insert & style interactive HTML tables             |
-| 😊 **Emoji Picker**       | Searchable emoji library (lazy-loaded on demand)          |
-| 🖼 **Image Pipeline**     | Drag-and-drop, WebP compression, resize handles, captions |
-| 🧙 **Magic Format**       | Typography & Accent themes with one-click reset           |
-| 📋 **Smart Paste**        | Auto-formats pasted HTML into clean rich text             |
-| 🧹 **Auto-Save**          | Configurable auto-save with visual "Saved at..." status   |
+| Feature                    | Description                                               |
+| :------------------------- | :-------------------------------------------------------- |
+| 🪶 **~30kB packed**        | Microscopic footprint — incredibly fast initial load      |
+| 🔒 **Security 9.8/10**     | Hard-coded XSS sanitization via DOMPurify                 |
+| ⚡ **Pure ESM**            | Zero CJS bloat, optimized for Vite, Webpack 5+            |
+| 🎯 **Framework Agnostic**  | React, Next.js, Vue, Angular, Svelte                      |
+| 🌑 **Dark Mode**           | Sophisticated built-in dark theme                         |
+| 📐 **Toolbar Positions**   | Top, Bottom, Left, Right, Floating                        |
+| 📊 **Table Editor**        | Native insert & style interactive HTML tables             |
+| 😊 **Emoji Picker**        | Searchable emoji library (lazy-loaded on demand)          |
+| 🖼 **Image Pipeline**      | Drag-and-drop, WebP compression, resize handles, captions |
+| 🧙 **Magic Format**        | Typography & Accent themes with one-click reset           |
+| 📋 **Smart Paste**         | Auto-formats pasted HTML into clean rich text             |
+| 🧹 **Auto-Save**           | Configurable auto-save with visual "Saved at..." status   |
+| 💻 **Premium Code Blocks** | 4-directional resize, 5 themes, and custom color picker   |
 
 ---
 
@@ -238,10 +238,25 @@ new InkflowEditor(container, {
 
 ## 📝 Changelog
 
-### v0.1.4 — UI Alignment Patch _(current)_
+### v0.1.5 — Structural & Synchronization Patch _(current)_
 
-- 📏 **Forced Left-Alignment**: Explicitly set `text-align: left` and `justify-content: flex-start` in the library's core CSS. This prevents the editor from inheriting unwanted centering styles from the host application environment.
-- 🛠 **UI Stability**: Ensured that toolbar items and editable areas maintain consistent positioning across different screen sizes and parent container configurations.
+- 🧱 **Structural Integrity**: Implemented high-frequency normalization (200ms) to prevent loss of paragraph tags during typing and forced focus redirection to ensure all content remains properly wrapped in `<p>` blocks.
+
+- 💻 **Premium Code Blocks**:
+  - **8-Handle Resizing**: Full 4-directional resizing (Top, Bottom, Left, Right) with corner handles and intuitive position-shifting.
+  - **Unified Control Hub**: Grouped "Copy" and "Remove" buttons in a sleek top-right glassmorphism container.
+  - **Visual Themes**: 5 premium themes (Terminal, Slate, Forest, Crimson, Ocean) and custom color picker with automatic YIQ text contrast.
+  - **Sychronized Outline**: Fixed resizing decoupling; the interactive focus border now perfectly follows the code area.
+- ⚡ **Performance & UX**: Moved removal logic to `mousedown` for instant response. Improved structural normalization to ensure code blocks and their content are fully deleted cleanly.
+- 🔄 **Toolbar Precision**:
+  - Fixed case-sensitivity mismatch for heading tags in the style dropdown.
+  - Improved line-height detection with fuzzy ratio matching to handle browser rounding differences.
+  - Resolved font-size input failures by implementing capture-phase selection preservation.
+- 🔡 **Typography & Fonts**: Added Google Fonts `@import` layer to the core CSS to support premium font families like Inter, Playfair Display, and Merriweather out-of-the-box.
+- 😊 **Emoji Placement**: Fixed a bug where emojis were misplaced at the start of the editor; implemented selection restoration before insertion.
+- 📐 **Default Styling**: Updated default line-height to `1.5` for a more readable, professional editing experience.
+
+### v0.1.4 — UI Alignment Patch
 
 ### v0.1.3 — Style & Stability Patch
 
@@ -255,7 +270,18 @@ new InkflowEditor(container, {
 - Magic Format 2.0: Typography & Accents themes with a dedicated Reset button
 - Refined vertical sidebar toolbars (76px) with pill-shaped controls
 - Hardened paste sanitization to prevent character limit bypasses
-- ~28kB packed weight, Pure ESM architecture
+- ~30kB packed weight, Pure ESM architecture
+
+---
+
+## 🤝 Community & Maintenance
+
+Inkflow is an open-source project and we love contributions. To maintain a high package health and security standard, we provide:
+
+- 🌟 **[Contributing Guide](./CONTRIBUTING.md)**: How to get started and submit changes.
+- 📜 **[Code of Conduct](./CODE_OF_CONDUCT.md)**: Our commitment to a welcoming community.
+- 🛡️ **[Security Policy](./SECURITY.md)**: How to report vulnerabilities.
+- 🤖 **CI/CD**: Automated testing on every pull request.
 
 ---
 

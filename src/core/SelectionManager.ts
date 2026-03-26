@@ -98,8 +98,16 @@ export class SelectionManager {
 
     const selection = this.getSelection();
     if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
+      try {
+        // Ensure range is still valid and in document
+        if (!range.startContainer || !document.contains(range.startContainer)) {
+          return;
+        }
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } catch (e) {
+        console.warn('Interrupted selection restoration:', e);
+      }
     }
   }
 
@@ -121,5 +129,25 @@ export class SelectionManager {
     if (selection) {
       selection.removeAllRanges();
     }
+  }
+
+  /**
+   * Moves the cursor to the end of the specified element.
+   */
+  setCursorAtEnd(element: Element): void {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    this.restoreSelection(range);
+  }
+
+  /**
+   * Moves the cursor to the start of the specified element.
+   */
+  setCursorAtStart(element: Element): void {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(true);
+    this.restoreSelection(range);
   }
 }

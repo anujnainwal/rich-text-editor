@@ -73,6 +73,7 @@ export class CoreEditor {
   private eventListeners: Array<{ target: EventTarget, type: string, handler: any }> = [];
   private loaderElement: HTMLElement | null = null;
   private isUndoingRedoing: boolean = false;
+  private normalizeTimeout: any = null;
 
   constructor(container: HTMLElement, options: EditorOptions = {}) {
     this.options = options;
@@ -109,6 +110,70 @@ export class CoreEditor {
     this.history = new HistoryManager(this.editableElement.innerHTML);
 
     this.setupInputHandlers();
+    this.addEventListener(this.editableElement, 'mousedown', (e: MouseEvent) => {
+      // If clicking on the editor padding or background (not directly on an existing block)
+      if (e.target === this.editableElement) {
+        setTimeout(() => {
+          if (this.editableElement.lastElementChild) {
+            // Check if last child is a block, it should be due to normalization
+            this.selection.setCursorAtEnd(this.editableElement.lastElementChild);
+          } else {
+            this.normalize();
+          }
+        }, 0);
+      }
+    });
+
+    this.addEventListener(this.editableElement, 'focus', () => {
+      // Ensure there's always at least one paragraph to type into
+      if (this.editableElement.children.length === 0 || 
+          (this.editableElement.firstElementChild && !['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'PRE'].includes(this.editableElement.firstElementChild.tagName))) {
+        this.normalize();
+      }
+      
+      // If we have an empty paragraph but cursor is outside, force it in
+      const sel = window.getSelection();
+      if (sel && sel.anchorNode === this.editableElement) {
+         if (this.editableElement.lastElementChild) {
+           this.selection.setCursorAtEnd(this.editableElement.lastElementChild);
+         }
+      }
+    });
+
+    this.addEventListener(this.editableElement, 'click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('te-code-copy-btn')) {
+        this.handleCodeCopy(target);
+      }
+      if (target.classList.contains('te-code-remove-btn') || target.closest('.te-code-remove-btn')) {
+        // Handle mostly via mousedown for instant response, but catch click if it gets through
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    this.addEventListener(this.editableElement, 'mousedown', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('te-resize-corner') || target.classList.contains('te-resize-bar')) {
+        this.handleCodeResizeStart(e, target);
+      }
+      if (target.classList.contains('te-code-remove-btn') || target.closest('.te-code-remove-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const btn = target.classList.contains('te-code-remove-btn') ? target : target.closest('.te-code-remove-btn') as HTMLElement;
+        this.handleCodeRemove(btn);
+      }
+    });
+
+    this.addEventListener(this.editableElement, 'contextmenu', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const wrapper = target.closest('.te-code-wrapper');
+      if (wrapper) {
+        e.preventDefault();
+        this.showCodeContextMenu(e.clientX, e.clientY, wrapper as HTMLElement);
+      }
+    });
+
     this.setupLimitEnforcement();
     this.setupLinkClickHandlers();
     this.setupImageObserver();
@@ -205,6 +270,7 @@ export class CoreEditor {
 
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
     if (this.historyTimeout) clearTimeout(this.historyTimeout);
+    if (this.normalizeTimeout) clearTimeout(this.normalizeTimeout);
 
     // Clean up managers
     if (this.imageManager && typeof (this.imageManager as any).destroy === 'function') {
@@ -509,6 +575,21 @@ export class CoreEditor {
         e.preventDefault();
         this.redo();
       }
+
+      // 3. Handle Tab Indentation in Code Block
+      if (e.key === 'Tab') {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const container = range.commonAncestorContainer as HTMLElement;
+          const pre = (container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement)?.closest('pre');
+
+          if (pre) {
+            e.preventDefault();
+            document.execCommand('insertText', false, '    '); // Insert 4 spaces for tab
+          }
+        }
+      }
     });
   }
 
@@ -557,6 +638,24 @@ export class CoreEditor {
 
   private handleInput(): void {
     if (this.isUndoingRedoing) return;
+
+    // Immediate check for "loose" text nodes to avoid layout jumps
+    const nodes = Array.from(this.editableElement.childNodes);
+    const hasLooseNodes = nodes.some(n => 
+      (n.nodeType === Node.TEXT_NODE && n.nodeValue?.trim()) || 
+      (n.nodeType === Node.ELEMENT_NODE && !['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'TABLE', 'DIV'].includes((n as HTMLElement).tagName))
+    );
+
+    if (hasLooseNodes) {
+      this.normalize();
+    }
+
+    // Aggressively ensure structure is valid during typing
+    // We use a small delay to avoid fighting with the browser's native input too much
+    if (this.normalizeTimeout) clearTimeout(this.normalizeTimeout);
+    this.normalizeTimeout = setTimeout(() => {
+      this.normalize();
+    }, 200); // Normalize after 200ms (much faster now)
 
     this.scheduleHistoryRecord();
 
@@ -709,7 +808,6 @@ export class CoreEditor {
       this.pendingStyles = {};
     }
 
-    // Special command for Magic Format
     if (command === 'magicFormat') {
       this.magicFormat();
       return;
@@ -717,6 +815,11 @@ export class CoreEditor {
 
     if (command === 'resetMagicFormat') {
       this.resetMagicFormat();
+      return;
+    }
+
+    if (command === 'insertCodeBlock') {
+      this.insertCodeBlock();
       return;
     }
 
@@ -1161,8 +1264,10 @@ export class CoreEditor {
     while (node) {
       if (node.style.getPropertyValue(property)) {
         node.style.removeProperty(property);
-        // If the span is now empty, we could potentially remove it, 
-        // but for now, we'll let it be to preserve other styles (bold, etc).
+        // If the span is now empty and has no ID or other important attributes, remove it
+        if (node.tagName === 'SPAN' && node.style.length === 0 && !node.id && !node.className) {
+           node.replaceWith(...Array.from(node.childNodes));
+        }
       }
       node = walker.nextNode() as HTMLElement | null;
     }
@@ -1205,7 +1310,7 @@ export class CoreEditor {
     let resultRange: Range | null = null;
 
     // Modern approach: apply style and then clean up/merge
-    // For now, we'll try to find if the selection is exactly a span and update it
+    // 1. Check if the selection is exactly a span and update it
     if (parent.tagName === 'SPAN' && parent.children.length === 0 && parent.textContent === range.toString()) {
       parent.style.setProperty(property, value);
       resultRange = range.cloneRange();
@@ -1418,7 +1523,12 @@ export class CoreEditor {
    * Returns the clean and optimized HTML content of the editor.
    */
   getHTML(): string {
-    return this.normalizeHTML(this.editableElement.innerHTML);
+    const html = this.normalizeHTML(this.editableElement.innerHTML);
+    // If it's just a blank placeholder paragraph, return empty string for data export
+    if (html === '<p><br></p>' || html === '<p></p>') {
+      return '';
+    }
+    return html;
   }
 
   /**
@@ -1525,6 +1635,12 @@ export class CoreEditor {
     return result;
   }
 
+  private isBlockElement(node: Node): boolean {
+    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+    const tagName = (node as HTMLElement).tagName;
+    return ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'FIGURE'].includes(tagName);
+  }
+
   /**
    * Optimizes HTML by fixing invalid nesting and removing redundant tags.
    */
@@ -1538,27 +1654,97 @@ export class CoreEditor {
 
     // 0. Wrap top-level text nodes and inline elements in <p>
     const rootNodes = Array.from(container.childNodes);
-    let currentParagraph: HTMLElement | null = null;
-
+    let currentP: HTMLParagraphElement | null = null;
+    
     rootNodes.forEach(node => {
-      // Check if node is inline (text or inline element like span/b/i)
-      const isInline = node.nodeType === Node.TEXT_NODE ||
-        (node.nodeType === Node.ELEMENT_NODE &&
-          !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'FIGURE'].includes((node as HTMLElement).tagName));
+      if (this.isBlockElement(node)) {
+        currentP = null;
+        // Ensure pre blocks have a code tag and copy button
+        if (node.nodeName === 'PRE') {
+          const pre = node as HTMLElement;
+          
+          // 1. Ensure <code> tag exists
+          if (!pre.querySelector('code')) {
+            const code = document.createElement('code');
+            code.innerHTML = pre.innerHTML;
+            pre.innerHTML = '';
+            pre.appendChild(code);
+          }
 
-      if (isInline) {
+          // 2. Ensure wrapper exists
+          let wrapper = pre.parentElement;
+          if (!wrapper || !wrapper.classList.contains('te-code-wrapper')) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'te-code-wrapper';
+            wrapper.contentEditable = 'false';
+            pre.before(wrapper);
+            wrapper.appendChild(pre);
+            pre.contentEditable = 'true';
+          }
+
+           // 3. Ensure Controls Hub is in the WRAPPER (top right)
+           let controls = wrapper.querySelector('.te-code-controls') as HTMLElement;
+           if (!controls) {
+              controls = document.createElement('div');
+              controls.className = 'te-code-controls';
+              controls.contentEditable = 'false';
+              wrapper.insertBefore(controls, pre);
+           }
+
+           // 4. Ensure Buttons are in the Controls Hub
+           if (!controls.querySelector('.te-code-copy-btn')) {
+              const btn = document.createElement('div');
+              btn.className = 'te-code-copy-btn';
+              btn.textContent = 'Copy';
+              btn.contentEditable = 'false';
+              controls.appendChild(btn);
+           }
+           if (!controls.querySelector('.te-code-remove-btn')) {
+              const btn = document.createElement('div');
+              btn.className = 'te-code-remove-btn';
+              btn.contentEditable = 'false';
+              btn.title = 'Remove Code Block';
+              btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+              controls.appendChild(btn);
+           }
+
+           // Cleanup old floating buttons if they exist
+           wrapper.querySelectorAll(':scope > .te-code-remove-btn, :scope > pre > .te-code-copy-btn').forEach(el => el.remove());
+
+           // 5. Ensure 4 Resize Bars exist
+           ['top', 'bottom', 'left', 'right'].forEach(dir => {
+              if (!wrapper.querySelector(`.te-bar-${dir}`)) {
+                 const bar = document.createElement('div');
+                 bar.className = `te-resize-bar te-bar-${dir}`;
+                 bar.contentEditable = 'false';
+                 wrapper.appendChild(bar);
+              }
+           });
+
+           // 6. Ensure 4 Corners exist
+           ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+              if (!wrapper.querySelector(`.te-corner-${corner}`)) {
+                 const handle = document.createElement('div');
+                 handle.className = `te-resize-corner te-corner-${corner}`;
+                 handle.contentEditable = 'false';
+                 wrapper.appendChild(handle);
+              }
+           });
+
+           // Cleanup old singular resize components
+           wrapper.querySelectorAll(':scope > .te-code-resize-handle, :scope > .te-code-resize-bar').forEach(el => el.remove());
+        }
+      } else {
         // Skip whitespace-only text nodes between blocks
-        if (node.nodeType === Node.TEXT_NODE && (node.textContent || '').trim() === '' && !currentParagraph) {
+        if (node.nodeType === Node.TEXT_NODE && (node.textContent || '').trim() === '' && !currentP) {
           return;
         }
 
-        if (!currentParagraph) {
-          currentParagraph = document.createElement('p');
-          node.before(currentParagraph);
+        if (!currentP) {
+          currentP = document.createElement('p');
+          node.before(currentP);
         }
-        currentParagraph.appendChild(node);
-      } else {
-        currentParagraph = null;
+        currentP.appendChild(node);
       }
     });
 
@@ -1588,6 +1774,34 @@ export class CoreEditor {
         span.replaceWith(text);
       } else if (span.innerHTML.trim() === '') {
         span.remove();
+      }
+    });
+
+    // 2.1 Merge adjacent identical spans
+    const spans = Array.from(container.querySelectorAll('span'));
+    spans.forEach(span => {
+      if (!span.parentNode) return; // Already removed/merged
+
+      let next = span.nextSibling;
+      // Skip whitespace text nodes
+      while (next && next.nodeType === Node.TEXT_NODE && next.textContent?.trim() === '') {
+        next = next.nextSibling;
+      }
+
+      if (next && next.nodeType === Node.ELEMENT_NODE && (next as HTMLElement).tagName === 'SPAN') {
+        const nextSpan = next as HTMLElement;
+        const style1 = span.getAttribute('style') || '';
+        const style2 = nextSpan.getAttribute('style') || '';
+        const class1 = span.getAttribute('class') || '';
+        const class2 = nextSpan.getAttribute('class') || '';
+
+        if (style1 === style2 && class1 === class2 && !span.id && !nextSpan.id) {
+          // Merge contents
+          while (nextSpan.firstChild) {
+            span.appendChild(nextSpan.firstChild);
+          }
+          nextSpan.remove();
+        }
       }
     });
 
@@ -1623,9 +1837,10 @@ export class CoreEditor {
       container.appendChild(p);
     }
 
-    // 5. Final check: if the output is just an empty paragraph, return empty string
-    if (container.innerHTML.trim() === '<p><br></p>' || container.innerHTML.trim() === '<p></p>') {
-      return '';
+    // 5. Final check: if the output is just an empty paragraph, keep it as a placeholder
+    // This ensures we always have a <p> tag for styling even when empty
+    if (container.innerHTML.trim() === '' || container.innerHTML.trim() === '<p><br></p>' || container.innerHTML.trim() === '<p></p>') {
+      return '<p><br></p>';
     }
 
     // CRITICAL SECURITY FIX: Sanitize the final normalized output
@@ -1791,5 +2006,359 @@ export class CoreEditor {
         if (this.options.onSave) this.save(); // Cleanup status
       }
     }
+  }
+
+  public insertCodeBlock(): void {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'te-code-wrapper';
+    wrapper.contentEditable = 'false';
+    
+    const pre = document.createElement('pre');
+    pre.contentEditable = 'true';
+    const code = document.createElement('code');
+    code.innerHTML = '<br>';
+    pre.appendChild(code);
+    
+    // Unified Controls Hub (Top-Right)
+    const controls = document.createElement('div');
+    controls.className = 'te-code-controls';
+    controls.contentEditable = 'false';
+
+    const copyBtn = document.createElement('div');
+    copyBtn.className = 'te-code-copy-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.contentEditable = 'false';
+    
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'te-code-remove-btn';
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    removeBtn.contentEditable = 'false';
+    removeBtn.title = 'Remove Code Block';
+
+    controls.appendChild(copyBtn);
+    controls.appendChild(removeBtn);
+    wrapper.appendChild(controls);
+    wrapper.appendChild(pre);
+
+    // 4-Directional Resize Bars
+    ['top', 'bottom', 'left', 'right'].forEach(dir => {
+      const bar = document.createElement('div');
+      bar.className = `te-resize-bar te-bar-${dir}`;
+      bar.contentEditable = 'false';
+      wrapper.appendChild(bar);
+    });
+
+    // Corner Handles
+    ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+      const handle = document.createElement('div');
+      handle.className = `te-resize-corner te-corner-${corner}`;
+      handle.contentEditable = 'false';
+      wrapper.appendChild(handle);
+    });
+
+    range.deleteContents();
+    range.insertNode(wrapper);
+    
+    this.selection.setCursorAtStart(code);
+    this.normalize();
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+  }
+
+  private handleCodeRemove(btn: HTMLElement): void {
+    const wrapper = btn.closest('.te-code-wrapper') as HTMLElement;
+    if (!wrapper) return;
+    
+    // Find neighbors for cursor migration
+    const prev = wrapper.previousElementSibling;
+    const next = wrapper.nextElementSibling;
+    const parent = wrapper.parentElement;
+
+    // Remove the entire block including all text
+    wrapper.remove();
+
+    // Migrate cursor to a valid location
+    if (next) {
+      if (next.tagName === 'PRE' || next.classList.contains('te-code-wrapper')) {
+        const target = next.querySelector('code') || next.querySelector('pre') || next;
+        this.selection.setCursorAtStart(target);
+      } else {
+        this.selection.setCursorAtStart(next);
+      }
+    } else if (prev) {
+      this.selection.setCursorAtEnd(prev);
+    } else if (parent) {
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      parent.appendChild(p);
+      this.selection.setCursorAtStart(p);
+    }
+
+    this.normalize();
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+  }
+
+  private handleCodeCopy(btn: HTMLElement): void {
+    if (btn.classList.contains('copied')) return;
+
+    const pre = btn.parentElement;
+    if (!pre) return;
+    
+    const code = pre.querySelector('code');
+    const text = code ? code.innerText : pre.innerText.replace('Copy', '').trim();
+    
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  private showCodeContextMenu(x: number, y: number, wrapper: HTMLElement): void {
+    this.hideCodeContextMenu();
+
+    const menu = document.createElement('div');
+    menu.className = 'te-code-context-menu';
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    const themeSection = document.createElement('div');
+    themeSection.className = 'te-menu-section';
+    themeSection.innerHTML = '<div class="te-menu-label">Code Themes</div>';
+    
+    const grid = document.createElement('div');
+    grid.className = 'te-theme-grid';
+    
+    const themes = ['slate', 'ocean', 'forest', 'crimson', 'terminal'];
+    const currentTheme = Array.from(wrapper.classList).find(c => c.startsWith('te-theme-'))?.replace('te-theme-', '') || 'slate';
+
+    themes.forEach(t => {
+      const dot = document.createElement('div');
+      dot.className = `te-theme-dot ${t === currentTheme ? 'active' : ''}`;
+      dot.dataset.theme = t;
+      dot.title = t.charAt(0).toUpperCase() + t.slice(1);
+      dot.onclick = (e) => {
+        e.stopPropagation();
+        this.applyCodeTheme(wrapper, t);
+        this.hideCodeContextMenu();
+      };
+      grid.appendChild(dot);
+    });
+
+    themeSection.appendChild(grid);
+    menu.appendChild(themeSection);
+    
+    // Custom Color Trigger
+    const customTrigger = document.createElement('div');
+    customTrigger.className = 'te-custom-color-trigger';
+    customTrigger.innerHTML = '<span>Custom Color</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    customTrigger.onclick = (e) => {
+      e.stopPropagation();
+      this.showCustomColorPicker(wrapper, themeSection, menu);
+    };
+    menu.appendChild(customTrigger);
+    
+    document.body.appendChild(menu);
+    
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 10}px`;
+    if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 10}px`;
+
+    const closer = (e: Event) => {
+      if (menu.contains(e.target as Node)) return;
+      this.hideCodeContextMenu();
+      document.removeEventListener('mousedown', closer);
+      document.removeEventListener('wheel', closer);
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', closer);
+      document.addEventListener('wheel', closer);
+    }, 0);
+  }
+
+  private hideCodeContextMenu(): void {
+    const existing = document.querySelector('.te-code-context-menu');
+    if (existing) existing.remove();
+  }
+
+  private applyCodeTheme(wrapper: HTMLElement, theme: string): void {
+    const pre = wrapper.querySelector('pre') as HTMLElement;
+    if (pre) {
+      pre.removeAttribute('style');
+    }
+
+    Array.from(wrapper.classList).forEach(c => {
+      if (c.startsWith('te-theme-')) wrapper.classList.remove(c);
+    });
+    
+    if (theme !== 'slate') {
+      wrapper.classList.add(`te-theme-${theme}`);
+    }
+    
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+  }
+
+  private showCustomColorPicker(wrapper: HTMLElement, _parentSection: HTMLElement, menu: HTMLElement): void {
+    const existing = menu.querySelector('.te-color-picker-container');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'te-color-picker-container';
+    
+    const pre = wrapper.querySelector('pre') as HTMLElement;
+    const currentBg = pre.style.backgroundColor || '#0f172a';
+    
+    // Hex converter for color input
+    let hexBg = currentBg;
+    if (currentBg.startsWith('rgb')) {
+       const rgb = currentBg.match(/\d+/g);
+       if (rgb) {
+          hexBg = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+       }
+    }
+
+    container.innerHTML = `
+      <div class="te-color-input-wrapper">
+        <input type="color" class="te-color-input" value="${hexBg.startsWith('#') ? hexBg : '#0f172a'}">
+        <span style="font-size: 11px; color: #e2e8f0;">Choose Color</span>
+      </div>
+      <div class="te-picker-actions">
+        <button class="te-picker-btn cancel">Cancel</button>
+        <button class="te-picker-btn apply">Apply</button>
+      </div>
+    `;
+
+    const input = container.querySelector('.te-color-input') as HTMLInputElement;
+    const applyBtn = container.querySelector('.te-picker-btn.apply') as HTMLButtonElement;
+    const cancelBtn = container.querySelector('.te-picker-btn.cancel') as HTMLButtonElement;
+
+    applyBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.applyCustomColor(wrapper, input.value);
+      this.hideCodeContextMenu();
+    };
+
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      container.remove();
+    };
+
+    menu.appendChild(container);
+  }
+
+  private applyCustomColor(wrapper: HTMLElement, bgColor: string): void {
+    const pre = wrapper.querySelector('pre') as HTMLElement;
+    if (!pre) return;
+
+    // Remove theme classes
+    Array.from(wrapper.classList).forEach(c => {
+      if (c.startsWith('te-theme-')) wrapper.classList.remove(c);
+    });
+
+    const textColor = this.getContrastColor(bgColor);
+    pre.style.backgroundColor = bgColor;
+    pre.style.color = textColor;
+    pre.style.borderColor = this.adjustColorBrightness(bgColor, -20);
+    
+    this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+  }
+
+  private getContrastColor(hexcolor: string): string {
+    if (hexcolor.startsWith('#')) hexcolor = hexcolor.slice(1);
+    const r = parseInt(hexcolor.substr(0, 2), 16);
+    const g = parseInt(hexcolor.substr(2, 2), 16);
+    const b = parseInt(hexcolor.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    // For code blocks we want high contrast
+    return (yiq >= 128) ? '#0f172a' : '#f8fafc';
+  }
+
+  private adjustColorBrightness(hex: string, percent: number): string {
+    if (hex.startsWith('#')) hex = hex.slice(1);
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+
+    r = Math.max(0, Math.min(255, r + (r * percent / 100)));
+    g = Math.max(0, Math.min(255, g + (g * percent / 100)));
+    b = Math.max(0, Math.min(255, b + (b * percent / 100)));
+
+    return '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+  }
+
+  private handleCodeResizeStart(e: MouseEvent, handle: HTMLElement): void {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const wrapper = handle.closest('.te-code-wrapper') as HTMLElement;
+    const pre = wrapper.querySelector('pre') as HTMLElement;
+    if (!pre) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = wrapper.offsetWidth;
+    const startHeight = wrapper.offsetHeight;
+    const startMarginTop = parseInt(window.getComputedStyle(wrapper).marginTop || '0');
+    const startMarginLeft = parseInt(window.getComputedStyle(wrapper).marginLeft || '0');
+    
+    // Direction detection
+    const isTop = handle.classList.contains('te-bar-top') || handle.classList.contains('te-corner-tl') || handle.classList.contains('te-corner-tr');
+    const isBottom = handle.classList.contains('te-bar-bottom') || handle.classList.contains('te-corner-bl') || handle.classList.contains('te-corner-br');
+    const isLeft = handle.classList.contains('te-bar-left') || handle.classList.contains('te-corner-tl') || handle.classList.contains('te-corner-bl');
+    const isRight = handle.classList.contains('te-bar-right') || handle.classList.contains('te-corner-tr') || handle.classList.contains('te-corner-br');
+
+    handle.classList.add('active');
+    wrapper.classList.add('resizing');
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      // Handle Height
+      if (isBottom) {
+        wrapper.style.height = `${Math.max(60, startHeight + deltaY)}px`;
+      } else if (isTop) {
+        const newHeight = Math.max(60, startHeight - deltaY);
+        if (newHeight > 60) {
+          wrapper.style.height = `${newHeight}px`;
+          wrapper.style.marginTop = `${startMarginTop + deltaY}px`;
+        }
+      }
+
+      // Handle Width
+      if (isRight) {
+        wrapper.style.width = `${Math.max(100, startWidth + deltaX)}px`;
+      } else if (isLeft) {
+        const newWidth = Math.max(100, startWidth - deltaX);
+        if (newWidth > 100) {
+          wrapper.style.width = `${newWidth}px`;
+          wrapper.style.marginLeft = `${startMarginLeft + deltaX}px`;
+        }
+      }
+    };
+
+    const onMouseUp = () => {
+      handle.classList.remove('active');
+      wrapper.classList.remove('resizing');
+      document.body.style.cursor = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      
+      this.history.record(this.editableElement.innerHTML, this.selection.getSelectionPath(this.editableElement));
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   }
 }

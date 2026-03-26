@@ -122,7 +122,7 @@ export class Toolbar {
     button.addEventListener('mousedown', (e) => {
       e.preventDefault();
 
-      if (item.command === 'createLink' || item.command === 'insertTable' || item.command === 'insertImage') {
+      if (item.command === 'createLink' || item.command === 'insertTable' || item.command === 'insertImage' || item.command === 'insertEmoji') {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
@@ -136,7 +136,15 @@ export class Toolbar {
         if (!this.activePicker) {
           this.activePicker = new EmojiPicker(
             (emoji) => {
+              if (this.savedRange) {
+                const sel = window.getSelection();
+                if (sel) {
+                  sel.removeAllRanges();
+                  sel.addRange(this.savedRange);
+                }
+              }
               this.editor.execute('insertText', emoji);
+              this.savedRange = null;
             },
             () => { this.activePicker = null; },
             this.editor.getOptions().theme,
@@ -293,13 +301,15 @@ export class Toolbar {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        if (this.editor.el.contains(range.commonAncestorContainer)) {
+        // Only save if it's inside the editor AND not just selecting the input itself!
+        if (this.editor.el.contains(range.commonAncestorContainer) && !input.contains(range.commonAncestorContainer)) {
           this.savedRange = range.cloneRange();
         }
       }
     };
 
-    input.addEventListener('mousedown', handleActiveSelection);
+    // Use mousedown at the capture phase to get the selection BEFORE it's lost due to focus shift
+    input.addEventListener('mousedown', handleActiveSelection, true);
     input.addEventListener('focus', handleActiveSelection);
 
     const applyChange = () => {
@@ -437,8 +447,19 @@ export class Toolbar {
   private updateActiveStates(): void {
     const selection = window.getSelection();
     const anchorNode = selection?.anchorNode;
-    const parent = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode as HTMLElement : anchorNode?.parentElement;
+    let parent = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode as HTMLElement : anchorNode?.parentElement;
     const inEditor = parent && this.editor.el.contains(parent);
+
+    // Find nearest block parent for block-level properties
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'TABLE', 'DIV'];
+    let blockParent = parent;
+    while (blockParent && blockParent !== this.editor.el && !blockTags.includes(blockParent.tagName)) {
+      blockParent = blockParent.parentElement;
+    }
+    // Fallback to editor if no block parent found (shouldn't happen with normalization)
+    if (!blockParent || blockParent === this.editor.el) {
+      blockParent = this.editor.el.firstElementChild as HTMLElement || this.editor.el;
+    }
 
     this.items.forEach((item) => {
       const element = this.itemElements.get(item);
@@ -453,10 +474,19 @@ export class Toolbar {
       } else if (item.type === 'select' && inEditor) {
         const select = element as HTMLSelectElement;
         if (item.command === 'formatBlock') {
-          const val = document.queryCommandValue('formatBlock');
-          if (val) select.value = val.toLowerCase();
+          let val = document.queryCommandValue('formatBlock');
+          if (val) {
+            val = val.toLowerCase();
+            // Map common results to selector options. 'div', '', 'body' usually means it's not in a proper <p> yet.
+            if (val === 'div' || val === '' || val === 'body' || val === 'address' || val === 'normal') val = 'p';
+            // Ensure we match exactly what's in the select options
+            select.value = val;
+          } else {
+            // Default to 'p' if we can't determine the block type (important for "Paragraph" dropdown)
+            select.value = 'p';
+          }
         } else if (item.command === 'fontFamily') {
-          const font = window.getComputedStyle(parent).fontFamily.replace(/['"]/g, '');
+          const font = window.getComputedStyle(parent!).fontFamily.replace(/['"]/g, '');
           const firstFont = font.split(',')[0].trim();
           // Find the option that starts with this font name to handle fallbacks
           for (let i = 0; i < select.options.length; i++) {
@@ -466,18 +496,34 @@ export class Toolbar {
             }
           }
         } else if (item.command === 'lineHeight') {
-          // Normalizing line-height detection is tricky, but let's try matching numeric values
-          const lh = window.getComputedStyle(parent).lineHeight;
-          const fs = window.getComputedStyle(parent).fontSize;
+          // Normalizing line-height detection, use block-level parent for better consistency
+          const lh = window.getComputedStyle(blockParent!).lineHeight;
+          const fs = window.getComputedStyle(blockParent!).fontSize;
+          
           if (lh && fs && lh !== 'normal') {
             const ratio = (parseFloat(lh) / parseFloat(fs)).toFixed(1);
+            // We search for the closest string match to handle slight rounding differences (e.g. 1.2 vs 1.15)
+            let closestValue = 'normal';
+            let minDiff = 100;
+            
             for (let i = 0; i < select.options.length; i++) {
-              if (select.options[i].value === ratio) {
-                select.selectedIndex = i;
-                break;
+              const optVal = parseFloat(select.options[i].value);
+              if (!isNaN(optVal)) {
+                const diff = Math.abs(parseFloat(ratio) - optVal);
+                if (diff < minDiff) {
+                  minDiff = diff;
+                  closestValue = select.options[i].value;
+                }
               }
             }
-          } else if (lh === 'normal') {
+            
+            // Only update if we're fairly confident in the match
+            if (minDiff < 0.1) {
+              select.value = closestValue;
+            } else {
+              select.value = 'normal';
+            }
+          } else {
             select.value = 'normal';
           }
         }

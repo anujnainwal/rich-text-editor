@@ -39,13 +39,13 @@ describe('HTML Normalization', () => {
   it('should lift lists out of paragraphs', () => {
     const invalidHTML = '<p><ul><li>Item 1</li></ul></p>';
     editor.setHTML(invalidHTML);
-    expect(editor.getHTML()).toBe('<ul><li>Item 1</li></ul>');
+    expect(editor.getHTML()).toBe('<ul><li>Item 1</li></ul><p><br></p>');
   });
 
   it('should lift lists and keep preceding text', () => {
     const mixedHTML = '<p>Preceding text<ul><li>Item 1</li></ul></p>';
     editor.setHTML(mixedHTML);
-    expect(editor.getHTML()).toBe('<p>Preceding text</p><ul><li>Item 1</li></ul>');
+    expect(editor.getHTML()).toBe('<p>Preceding text</p><ul><li>Item 1</li></ul><p><br></p>');
   });
 
   it('should remove redundant spans', () => {
@@ -66,7 +66,7 @@ describe('HTML Normalization', () => {
     expect(editor.getHTML()).toBe('<p>Para 1</p><p>Para 2</p>');
   });
 
-  it('should return an empty string if the content is just a blank paragraph', () => {
+  it('should return an empty string if the content is blank', () => {
     const blankPara = '<p><br></p>';
     editor.setHTML(blankPara);
     expect(editor.getHTML()).toBe('');
@@ -88,5 +88,32 @@ describe('HTML Normalization', () => {
     const raw = 'Text before<ul><li>List</li></ul>Text after';
     editor.setHTML(raw);
     expect(editor.getHTML()).toBe('<p>Text before</p><ul><li>List</li></ul><p>Text after</p>');
+  });
+
+  it('should merge adjacent spans with identical styles', () => {
+    const html = '<p><span style="color: red;">Part 1</span><span style="color: red;">Part 2</span></p>';
+    editor.setHTML(html);
+    expect(editor.getHTML()).toBe('<p><span style="color: red;">Part 1Part 2</span></p>');
+  });
+
+  it('should not merge adjacent spans with different styles', () => {
+    const html = '<p><span style="color: red;">Red</span><span style="color: blue;">Blue</span></p>';
+    editor.setHTML(html);
+    expect(editor.getHTML()).toBe('<p><span style="color: red;">Red</span><span style="color: blue;">Blue</span></p>');
+  });
+
+  it('should merge spans with identical classes and styles', () => {
+    const html = '<p><span class="bold" style="color: red;">A</span><span class="bold" style="color: red;">B</span></p>';
+    editor.setHTML(html);
+    expect(editor.getHTML()).toBe('<p><span class="bold" style="color: red;">AB</span></p>');
+  });
+
+  it('should remove spans that become redundant after style removal', () => {
+    const html = '<p><span style="font-size: 20px;">Text</span></p>';
+    editor.setHTML(html);
+    // Manually trigger clear
+    (editor as any).clearStyleRecursive(editor.el, 'font-size');
+    editor.normalize();
+    expect(editor.getHTML()).toBe('<p>Text</p>');
   });
 });
