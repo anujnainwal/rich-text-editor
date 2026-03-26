@@ -853,7 +853,7 @@ export class CoreEditor {
    */
   public magicFormat(): void {
     // Get current global state or default to 0
-    let globalState = (this.magicStateMap.get(this.editableElement) || 0);
+    const globalState = (this.magicStateMap.get(this.editableElement) || 0);
     const nextState = (globalState + 1) % 3;
     this.magicStateMap.set(this.editableElement, nextState);
 
@@ -1058,7 +1058,7 @@ export class CoreEditor {
 
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
     let node;
-    while (node = walker.nextNode()) {
+    while ((node = walker.nextNode())) {
       let text = node.nodeValue || '';
       let changed = false;
       Object.entries(emojiMap).forEach(([word, emoji]) => {

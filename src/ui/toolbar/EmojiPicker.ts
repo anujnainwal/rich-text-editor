@@ -166,7 +166,7 @@ export class EmojiPicker {
     const rect = referenceEl.getBoundingClientRect();
     const pickerWidth = 280;
 
-    let top = rect.bottom + window.scrollY + 5;
+    const top = rect.bottom + window.scrollY + 5;
     let left = rect.left + window.scrollX;
 
     // Boundary check

@@ -145,7 +145,7 @@ export class InputModal {
     const rect = referenceEl.getBoundingClientRect();
     const modalWidth = 260;
 
-    let top = rect.bottom + window.scrollY + 10;
+    const top = rect.bottom + window.scrollY + 10;
     let left = rect.left + window.scrollX;
 
     // Boundary check

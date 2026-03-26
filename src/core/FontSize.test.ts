@@ -134,7 +134,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
   it('Cases 11-15: Sticky Styles', () => {
     // 11. Empty Editor Sticky
     editor.setHTML('<p><br></p>');
-    let p = editor.el.querySelector('p')!;
+    const p = editor.el.querySelector('p')!;
     setSelection(p, 0, 0);
     editor.setStyle('font-size', '50px');
     editor.el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: 'A', bubbles: true }));
@@ -142,7 +142,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
 
     // 12. Line End Sticky
     editor.setHTML('<p>End</p>');
-    let t = editor.el.querySelector('p')!.firstChild!;
+    const t = editor.el.querySelector('p')!.firstChild!;
     setSelection(t, 3, 3);
     editor.setStyle('font-size', '22px');
     editor.el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: '!', bubbles: true }));
@@ -150,7 +150,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
 
     // 13. Mid-Word Sticky
     editor.setHTML('<p>Split</p>');
-    let t2 = editor.el.querySelector('p')!.firstChild!;
+    const t2 = editor.el.querySelector('p')!.firstChild!;
     setSelection(t2, 2, 2); // Sp|lit
     editor.setStyle('font-size', '8px');
     editor.el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: '-', bubbles: true }));
@@ -179,7 +179,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
   it('Cases 16-20: Structural', () => {
     // 16. List Item
     editor.setHTML('<ul><li>Item</li></ul>');
-    let li = editor.el.querySelector('li')!.firstChild!;
+    const li = editor.el.querySelector('li')!.firstChild!;
     editor.setStyle('font-size', '16px', setSelection(li, 0, 4));
     expect(editor.getHTML()).toContain('16px');
 
@@ -190,7 +190,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
 
     // 20. Span Boundary
     editor.setHTML('<p><span style="font-size: 20px;">Boundary</span></p>');
-    let spanNode = editor.el.querySelector('span')!.firstChild!;
+    const spanNode = editor.el.querySelector('span')!.firstChild!;
     setSelection(spanNode, 0, 0);
     editor.setStyle('font-size', '30px');
     editor.el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: '!', bubbles: true }));
@@ -220,7 +220,7 @@ describe('CoreEditor - 30 Font Size Test Cases', () => {
   it('Cases 26-30: Interactive & Special', () => {
     // 30. Line Break Selection
     editor.setHTML('<p>Line1<br>Line2</p>');
-    let p = editor.el.querySelector('p')!;
+    const p = editor.el.querySelector('p')!;
     editor.setStyle('font-size', '20px', setSelection(p, 0, 2));
     expect(editor.getHTML()).toContain('20px');
   });

@@ -447,7 +447,7 @@ export class Toolbar {
   private updateActiveStates(): void {
     const selection = window.getSelection();
     const anchorNode = selection?.anchorNode;
-    let parent = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode as HTMLElement : anchorNode?.parentElement;
+    const parent = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode as HTMLElement : anchorNode?.parentElement;
     const inEditor = parent && this.editor.el.contains(parent);
 
     // Find nearest block parent for block-level properties
