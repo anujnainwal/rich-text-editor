@@ -763,7 +763,7 @@ export class CoreEditor {
     const el = document.createElement('div');
     el.setAttribute('contenteditable', 'true');
     el.setAttribute('role', 'textbox');
-    el.setAttribute('spellcheck', 'true');
+    el.setAttribute('spellcheck', 'false');
     el.classList.add('te-content');
 
     if (this.options.placeholder) {
@@ -1704,7 +1704,7 @@ export class CoreEditor {
               btn.className = 'te-code-remove-btn';
               btn.contentEditable = 'false';
               btn.title = 'Remove Code Block';
-              btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+               btn.innerHTML = '<span class="te-close-icon">&times;</span>';
               controls.appendChild(btn);
            }
 
@@ -2036,7 +2036,7 @@ export class CoreEditor {
     
     const removeBtn = document.createElement('div');
     removeBtn.className = 'te-code-remove-btn';
-    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    removeBtn.innerHTML = '<span class="te-close-icon">&times;</span>';
     removeBtn.contentEditable = 'false';
     removeBtn.title = 'Remove Code Block';
 

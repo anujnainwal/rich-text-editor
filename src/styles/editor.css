@@ -544,7 +544,19 @@
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9em;
-  border: 1px solid var(--te-border-color);
+  border: none; /* Removed border to prevent unexpected "box" appearance */
+}
+
+.te-content a {
+  color: var(--te-primary-color);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(129, 140, 248, 0.3);
+  transition: var(--te-transition);
+}
+
+.te-content a:hover {
+  border-bottom-color: var(--te-primary-color);
+  background: rgba(129, 140, 248, 0.05);
 }
 
 /* Image Support */
@@ -1175,20 +1187,17 @@
   transform: translateY(-1px);
 }
 
-.te-code-remove-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  stroke-width: 3;
-}
-
-.te-code-remove-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  stroke-width: 3;
-  display: block;
-  pointer-events: none; /* Make clicks pass through to the parent button */
+.te-close-icon {
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: white !important;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -1px; /* Subpixel adjustment for centering */
+  pointer-events: none;
 }
 
 /* Scrollbar for Code Blocks */
