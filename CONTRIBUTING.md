@@ -15,9 +15,13 @@ git checkout -b feature/your-feature-name
 ```
 
 ### 2. Development Setup
-1.  **Install Dependencies**: `npm install`
-2.  **Start Dev Server**: `npm run dev` (Runs the editor demo)
-3.  **Run Tests**: `npm test` (Uses Vitest)
+
+To get started with development, follow these steps:
+
+1.  **Install Dependencies**: `npm install`. This will automatically set up **Husky** handles to ensure you don't accidentally push directly to the `master` branch.
+2.  **Start Dev Server**: `npm run dev`. This runs the editor demo locally.
+3.  **Run Tests**: `npm test`. We use Vitest for core editor logic.
+4.  **Lint**: `npm run lint`. Ensure your code follows the project's style guide.
 
 ### 3. Automated CI
 On every Pull Request, our **GitHub Actions CI** will automatically run:

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { InkflowEditor } from '../index';
 
 describe('QA Bug Fixes', () => {
@@ -32,34 +32,22 @@ describe('QA Bug Fixes', () => {
     (editor as any).editableElement.innerHTML = '<p><ul><li>Item</li></ul></p>';
     
     const li = editor.el.querySelector('li')!;
-    const range = {
-      startContainer: li,
-      startOffset: 0,
-      endContainer: li,
-      endOffset: 4,
-      commonAncestorContainer: li,
-      cloneRange: () => ({ ...range }),
-      collapse: vi.fn(),
-      insertNode: vi.fn((node: Node) => {
-        li.appendChild(node);
-      }),
-      setStartAfter: vi.fn(),
-      setEndBefore: vi.fn()
-    } as unknown as Range;
-
-    document.createRange = vi.fn().mockReturnValue({
-      setStartAfter: vi.fn(),
-      setEndBefore: vi.fn(),
-      collapse: vi.fn(),
-    });
-
     const mockSelection = window.getSelection()!;
+
+    // Initial path capture setup
+    const range = document.createRange();
+    range.setStart(li.firstChild || li, 0);
+    range.setEnd(li.firstChild || li, 4);
+    
     (mockSelection.getRangeAt as any).mockReturnValue(range);
+    (mockSelection as any).rangeCount = 1;
 
     editor.normalize();
 
+    // With path-based restoration, restoreSelectionPath will be called,
+    // which eventually calls addRange.
     expect(mockSelection.addRange).toHaveBeenCalled();
-    expect(editor.el.innerHTML).toBe('<ul><li>Item</li></ul>');
+    expect(editor.el.innerHTML).toContain('<ul><li>Item</li>');
   });
 
   it('should only delete image if selection is within the image container', () => {

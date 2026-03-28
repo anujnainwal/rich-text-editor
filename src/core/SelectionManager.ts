@@ -150,4 +150,53 @@ export class SelectionManager {
     range.collapse(true);
     this.restoreSelection(range);
   }
+
+  /**
+   * Temporary markers for robust preservation across structural changes.
+   */
+  saveSelectionMarkers(root: HTMLElement): void {
+    const range = this.getRange();
+    if (!range || !root.contains(range.commonAncestorContainer)) return;
+
+    const startMarker = document.createElement('span');
+    startMarker.id = 'te-selection-start';
+    startMarker.style.display = 'none';
+
+    const endMarker = document.createElement('span');
+    endMarker.id = 'te-selection-end';
+    endMarker.style.display = 'none';
+
+    const endRange = range.cloneRange();
+    endRange.collapse(false);
+    endRange.insertNode(endMarker);
+
+    const startRange = range.cloneRange();
+    startRange.collapse(true);
+    startRange.insertNode(startMarker);
+  }
+
+  restoreSelectionMarkers(root: HTMLElement): void {
+    const startMarker = root.querySelector('#te-selection-start');
+    const endMarker = root.querySelector('#te-selection-end');
+
+    if (startMarker && endMarker) {
+      const range = document.createRange();
+      range.setStartAfter(startMarker);
+      range.setEndBefore(endMarker);
+      this.restoreSelection(range);
+    } else if (startMarker) {
+      const range = document.createRange();
+      range.setStartAfter(startMarker);
+      range.collapse(true);
+      this.restoreSelection(range);
+    }
+
+    // Cleanup
+    if (startMarker) startMarker.remove();
+    if (endMarker) endMarker.remove();
+  }
+
+  removeSelectionMarkers(root: HTMLElement): void {
+    root.querySelectorAll('#te-selection-start, #te-selection-end').forEach(m => m.remove());
+  }
 }

@@ -48,6 +48,7 @@ describe('Toolbar New Features', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('Line Height', () => {
@@ -105,10 +106,15 @@ describe('Toolbar New Features', () => {
       
       imageBtn.dispatchEvent(new Event('mousedown'));
 
-      const appendedElement = appendChildSpy.mock.calls.find(call => 
-        call[0] instanceof HTMLInputElement && call[0].type === 'file'
-      )?.[0] as HTMLInputElement;
+      // The InputModal appends a div.te-modal to document.body.
+      // The file input is inside this modal.
+      const appendedModal = appendChildSpy.mock.calls.find(call => 
+        call[0] instanceof HTMLElement && call[0].classList.contains('te-modal')
+      )?.[0] as HTMLElement;
 
+      expect(appendedModal).toBeDefined();
+      
+      const appendedElement = appendedModal.querySelector('input[type="file"]') as HTMLInputElement;
       expect(appendedElement).toBeDefined();
 
       class MockFileReader {
@@ -119,13 +125,15 @@ describe('Toolbar New Features', () => {
           }, 0);
         }
       }
-      global.FileReader = MockFileReader as any;
+      vi.stubGlobal('FileReader', MockFileReader);
 
       Object.defineProperty(appendedElement, 'files', {
         value: [new File([''], 'test.jpg', { type: 'image/jpeg' })]
       });
 
-      appendedElement.dispatchEvent(new Event('change'));
+      // In InputModal, we must click the "Insert" button to trigger the confirmation
+      const confirmBtn = appendedModal.querySelector('.te-modal-btn-confirm') as HTMLButtonElement;
+      confirmBtn.click();
 
       await vi.waitFor(() => {
         expect(insertImageSpy).toHaveBeenCalledWith('data:image/jpeg;base64,mock');

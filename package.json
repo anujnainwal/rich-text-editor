@@ -3,17 +3,29 @@
   "version": "0.1.5",
   "description": "A premium, lightweight, and framework-agnostic WYSIWYG rich text editor with a sophisticated Slate & Indigo design. Highly customizable and optimized for React, Next.js, and Vanilla TypeScript.",
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "files": [
     "dist"
   ],
-  "main": "./dist/inkflow-editor.mjs",
+  "main": "./dist/inkflow-editor.cjs",
   "module": "./dist/inkflow-editor.mjs",
+  "browser": "./dist/inkflow-editor.mjs",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/inkflow-editor.mjs",
+  "jsdelivr": "./dist/inkflow-editor.mjs",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/inkflow-editor.mjs",
-      "default": "./dist/inkflow-editor.mjs"
+      "require": "./dist/inkflow-editor.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.cjs"
     },
     "./style": {
       "types": "./dist/style.d.ts",
@@ -26,23 +38,33 @@
     "build": "vite build && tsc -p tsconfig.types.json && cp src/style.d.ts dist/style.d.ts && sed -i '' '/import.*\\.css/d' dist/index.d.ts",
     "preview": "vite preview",
     "test": "vitest",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^25.3.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "@vitest/browser": "^4.0.18",
     "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-javascript-obfuscator": "^3.1.0",
     "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "keywords": [
     "rich-text-editor",
@@ -65,7 +87,14 @@
     "xss-protection"
   ],
   "author": "Anuj Nainwal",
+  "contributors": [
+    {
+      "name": "Anuj Nainwal",
+      "url": "https://github.com/anujnainwal"
+    }
+  ],
   "license": "MIT",
+  "funding": "https://github.com/sponsors/anujnainwal",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anujnainwal/rich-text-editor.git"

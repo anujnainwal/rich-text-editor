@@ -19,7 +19,10 @@ describe('Table Support', () => {
       removeAllRanges() { 
         this._ranges = []; 
         this.rangeCount = 0;
-      }
+      },
+      // Adding a simple implementation for selectNodeContents if needed, 
+      // but usually the native Range.prototype.selectNodeContents works if the node is real.
+      containsNode(node: Node) { return true; } 
     };
 
     window.getSelection = vi.fn().mockReturnValue(mockSelection);
@@ -34,8 +37,13 @@ describe('Table Support', () => {
     editor = new CoreEditor(container);
     
     // Set up initial selection so dynamic insertion can work
+    // We must ensure the range is attached to a real node in the DOM
     const range = document.createRange();
-    range.setStart(editor.el, 0);
+    if (editor.el.firstChild) {
+      range.setStart(editor.el.firstChild, 0);
+    } else {
+      range.setStart(editor.el, 0);
+    }
     range.collapse(true);
     const sel = window.getSelection();
     sel?.removeAllRanges();
@@ -54,48 +62,65 @@ describe('Table Support', () => {
     expect(table).toBeTruthy();
     expect(table?.classList.contains('te-table')).toBe(true);
     expect(table?.querySelectorAll('tr').length).toBe(2);
-    expect(table?.querySelectorAll('td').length).toBe(8);
+    // Count both th and td
+    expect(table?.querySelectorAll('td, th').length).toBe(8);
   });
 
   it('should add a row to the table', () => {
     editor.insertTable(1, 1);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    const td = table.querySelector('td')!;
+    // Select the first (header) cell
+    const th = table.querySelector('th');
+    expect(th).toBeTruthy();
+    
     const range = document.createRange();
-    range.selectNodeContents(td);
+    // Select text node instead of the cell directly for more realistic selection
+    range.setStart(th!.firstChild || th!, 0);
+    range.collapse(true);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
 
     editor.addRow();
+    // 1 original th row + 1 new row (td) = 2
     expect(table.rows.length).toBe(2);
   });
 
   it('should delete a row from the table', () => {
-    editor.insertTable(2, 1);
+    editor.insertTable(2, 1); // 1 th row + 1 td row
     const table = container.querySelector('table') as HTMLTableElement;
     
-    const td = table.querySelector('td')!;
+    // Select the second row (the td row)
+    const td = table.querySelector('td');
+    expect(td).toBeTruthy();
+    
     const range = document.createRange();
-    range.selectNodeContents(td);
+    range.setStart(td!.firstChild || td!, 0);
+    range.collapse(true);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
 
     editor.deleteRow();
     expect(table.rows.length).toBe(1);
+    expect(table.querySelector('th')).toBeTruthy();
+    expect(table.querySelector('td')).toBeNull();
   });
 
   it('should add a column to the table', () => {
     editor.insertTable(1, 1);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    const td = table.querySelector('td')!;
+    const th = table.querySelector('th');
+    expect(th).toBeTruthy();
+    
     const range = document.createRange();
-    range.selectNodeContents(td);
+    range.setStart(th!.firstChild || th!, 0);
+    range.collapse(true);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
 
     editor.addColumn();
+    // One row now has 2 cells
     expect(table.rows[0].cells.length).toBe(2);
   });
 
@@ -103,9 +128,12 @@ describe('Table Support', () => {
     editor.insertTable(1, 2);
     const table = container.querySelector('table') as HTMLTableElement;
     
-    const td = table.querySelector('td')!;
+    const th = table.querySelector('th');
+    expect(th).toBeTruthy();
+    
     const range = document.createRange();
-    range.selectNodeContents(td);
+    range.setStart(th!.firstChild || th!, 0);
+    range.collapse(true);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
 

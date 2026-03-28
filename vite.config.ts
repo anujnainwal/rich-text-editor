@@ -6,19 +6,27 @@ export default defineConfig({
   build: {
     minify: 'esbuild',
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'InkflowEditor',
-      fileName: (format) => `inkflow-editor.${format === 'es' ? 'mjs' : 'js'}`,
-      formats: ['es'],
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        react: resolve(__dirname, 'src/react/index.ts'),
+      },
+      formats: ['es', 'cjs'],
+      fileName: (format, entryName) => {
+        const base = entryName === 'index' ? 'inkflow-editor' : entryName;
+        if (format === 'es') return `${base}.mjs`;
+        if (format === 'cjs') return `${base}.cjs`;
+        return `${base}.js`;
+      },
     },
     rollupOptions: {
       // Ensure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ['dompurify'],
+      external: ['dompurify', 'react', 'react-dom', 'react/jsx-runtime'],
       output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {},
+        globals: {
+          dompurify: 'DOMPurify',
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        },
       },
     },
     sourcemap: false,

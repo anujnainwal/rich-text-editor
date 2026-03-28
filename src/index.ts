@@ -3,9 +3,9 @@ import { Toolbar } from './ui/Toolbar';
 import './styles/editor.css';
 
 export class InkflowEditor extends CoreEditor {
-  private toolbar: Toolbar;
+  private toolbar!: Toolbar;
 
-  constructor(container: HTMLElement, options: EditorOptions = {}) {
+  constructor(container?: HTMLElement | null, options: EditorOptions = {}) {
     // Inject custom hooks if provided, otherwise provide default ones for toolbar status
     const augmentedOptions: EditorOptions = {
       ...options,
@@ -29,15 +29,22 @@ export class InkflowEditor extends CoreEditor {
 
     super(container, augmentedOptions);
     
-    // SSR Guard
-    if (typeof document === 'undefined' || !container) {
-      this.toolbar = {} as Toolbar;
-      return;
-    }
-    
+    // If container was provided, CoreEditor already called mount(), which calls initializeUI()
+    // However, initializeUI doesn't know about Toolbar. 
+    // We'll handle toolbar init in our overridden mount/initializeUI.
+  }
+
+  public mount(container: HTMLElement): void {
+    super.mount(container);
+  }
+
+  protected initializeUI(): void {
+    super.initializeUI();
+
+    // Toolbar setup
     this.toolbar = new Toolbar(this);
     
-    const pos = augmentedOptions.toolbarPosition || 'top';
+    const pos = this.options.toolbarPosition || 'top';
     
     if (pos === 'top') {
       this.container.insertBefore(this.toolbar.el, this.editableElement);
@@ -55,17 +62,17 @@ export class InkflowEditor extends CoreEditor {
       this.container.classList.add('te-toolbar-floating');
     }
 
-    if (augmentedOptions.showStatus !== false && this.toolbar && pos !== 'floating') {
+    if (this.options.showStatus !== false && this.toolbar && pos !== 'floating') {
       this.toolbar.updateStatus('All changes saved', false);
     }
 
     // Initialize metrics if enabled
-    if (augmentedOptions.showCharCount) {
+    if (this.options.showCharCount) {
       this.toolbar.updateMetrics();
     }
 
     // Listen for changes to update metrics
-    this.el.addEventListener('input', () => {
+    this.editableElement.addEventListener('input', () => {
       this.toolbar?.updateMetrics();
     });
 

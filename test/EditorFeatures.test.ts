@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { CoreEditor } from '../src/core/Editor';
 import { ImageUploader } from '../src/core/plugins/ImageUploader';
 
@@ -38,6 +38,11 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
     editor = new CoreEditor(container);
     // Reset vi mocks
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('HTML Auto-Format Paste', () => {
@@ -100,7 +105,7 @@ describe('Editor New Features (HTML Paste & Formatting)', () => {
           }, 0);
         }
       }
-      global.FileReader = MockFileReader as any;
+      vi.stubGlobal('FileReader', MockFileReader);
 
       const pasteEvent = new Event('paste') as any;
       pasteEvent.preventDefault = preventDefaultSpy;

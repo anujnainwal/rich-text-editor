@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="branding/logo.png" width="150" alt="Inkflow Logo">
+  <img src="https://res.cloudinary.com/dsk6tf2jb/image/upload/v1774675782/inkflow%20editor/inkflow-logo.png" width="150" alt="Inkflow Logo">
 </p>
 
 # Inkflow: The Premium WYSIWYG Rich Text Editor for Modern Web Apps ✍️
 
 [![NPM Version](https://img.shields.io/npm/v/inkflow.svg)](https://www.npmjs.com/package/inkflow)
 [![CI Status](https://github.com/anujnainwal/rich-text-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/anujnainwal/rich-text-editor/actions)
-[![Open Issues](https://img.shields.io/github/issues/anujnainwal/rich-text-editor.svg)](https://github.com/anujnainwal/rich-text-editor/issues)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/anujnainwal/rich-text-editor/graphs/commit-activity)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Security Policy](https://img.shields.io/badge/security-policy-green.svg)](./SECURITY.md)
 
@@ -53,8 +54,9 @@ Inkflow is designed for developers who need a **high-performance, secure, and be
 | :------------------------- | :-------------------------------------------------------- |
 | 🪶 **~30kB packed**        | Microscopic footprint — incredibly fast initial load      |
 | 🔒 **Security 9.8/10**     | Hard-coded XSS sanitization via DOMPurify                 |
-| ⚡ **Pure ESM**            | Zero CJS bloat, optimized for Vite, Webpack 5+            |
+| ⚡ **Pure ESM & CJS**      | Optimized for Vite, Node.js, and Legacy Bundlers          |
 | 🎯 **Framework Agnostic**  | React, Next.js, Vue, Angular, Svelte                      |
+| ♿ **A11y Ready**          | Full ARIA support for screen readers and keyboards        |
 | 🌑 **Dark Mode**           | Sophisticated built-in dark theme                         |
 | 📐 **Toolbar Positions**   | Top, Bottom, Left, Right, Floating                        |
 | 📊 **Table Editor**        | Native insert & style interactive HTML tables             |
@@ -174,6 +176,29 @@ export default function MyEditor() {
 
 ---
 
+### CDN / Legacy Usage (UMD)
+
+For projects without a bundler, you can include Inkflow directly via Unpkg or jsDelivr. The global `InkflowEditor` class will be available on the `window` object.
+
+```html
+<!-- Include Styles -->
+<link rel="stylesheet" href="https://unpkg.com/inkflow/dist/inkflow.css">
+
+<!-- Include Library -->
+<script src="https://unpkg.com/inkflow"></script>
+
+<div id="editor"></div>
+
+<script>
+  const container = document.getElementById('editor');
+  const editor = new InkflowEditor(container, {
+    placeholder: 'Hello from CDN!',
+  });
+</script>
+```
+
+---
+
 ## ⚙️ Configuration Options
 
 | Option               | Type       | Default     | Description                                                    |
@@ -274,14 +299,14 @@ new InkflowEditor(container, {
 
 ---
 
-## 🤝 Community & Maintenance
+## 🤝 Community & Support
 
-Inkflow is an open-source project and we love contributions. To maintain a high package health and security standard, we provide:
+We strive to build a welcoming and inclusive community. Please refer to our support documents:
 
 - 🌟 **[Contributing Guide](./CONTRIBUTING.md)**: How to get started and submit changes.
 - 📜 **[Code of Conduct](./CODE_OF_CONDUCT.md)**: Our commitment to a welcoming community.
 - 🛡️ **[Security Policy](./SECURITY.md)**: How to report vulnerabilities.
-- 🤖 **CI/CD**: Automated testing on every pull request.
+- 💖 **[Funding & Support](./.github/FUNDING.yml)**: Help sustain the project.
 
 ---
 

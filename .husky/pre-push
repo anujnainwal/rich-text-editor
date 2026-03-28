@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Get the current branch name
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Define protected branches
+protected_branches="main master"
+
+# Check if the current branch is protected
+if echo "$protected_branches" | grep -qw "$current_branch"; then
+  echo "Error: Direct push to '$current_branch' is blocked."
+  echo "Please create a Pull Request and get it reviewed before merging."
+  exit 1
+fi

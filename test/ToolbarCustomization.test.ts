@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
-import { InkFlowEditor } from '../src/index';
+import { InkflowEditor } from '../src/index';
 
 describe('Toolbar Customization', () => {
   let container: HTMLElement;
@@ -31,7 +31,7 @@ describe('Toolbar Customization', () => {
   });
 
   it('should render only specified tools', () => {
-    const editor = new InkFlowEditor(container, {
+    const editor = new InkflowEditor(container, {
       toolbarItems: ['bold', 'italic']
     });
 
@@ -52,7 +52,7 @@ describe('Toolbar Customization', () => {
   });
 
   it('should render all tools by default', () => {
-    const editor = new InkFlowEditor(container);
+    const editor = new InkflowEditor(container);
     const toolbar = container.querySelector('.te-toolbar');
     const buttons = toolbar?.querySelectorAll('.te-button');
     // Default has many buttons
@@ -60,7 +60,7 @@ describe('Toolbar Customization', () => {
   });
 
   it('should handle empty toolbarItems', () => {
-    const editor = new InkFlowEditor(container, {
+    const editor = new InkflowEditor(container, {
       toolbarItems: []
     });
     const toolbar = container.querySelector('.te-toolbar');

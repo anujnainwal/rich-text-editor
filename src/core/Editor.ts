@@ -58,11 +58,11 @@ export interface EditorOptions {
 }
 
 export class CoreEditor {
-  protected container: HTMLElement;
-  protected editableElement: HTMLElement;
-  public selection: SelectionManager;
-  protected imageManager: ImageManager;
-  private history: HistoryManager;
+  protected container!: HTMLElement;
+  protected editableElement!: HTMLElement;
+  public selection!: SelectionManager;
+  protected imageManager!: ImageManager;
+  private history!: HistoryManager;
   protected options: EditorOptions;
   private saveTimeout: any = null;
   private historyTimeout: any = null;
@@ -75,20 +75,39 @@ export class CoreEditor {
   private isUndoingRedoing: boolean = false;
   private normalizeTimeout: any = null;
 
-  constructor(container: HTMLElement, options: EditorOptions = {}) {
+  constructor(container?: HTMLElement | null, options: EditorOptions = {}) {
     this.options = options;
+
+    if (container) {
+      this.mount(container);
+    } else {
+      // Logic-only initialization for SSR or deferred mounting
+      this.selection = new SelectionManager();
+      this.imageManager = new ImageManager(this);
+      this.history = new HistoryManager('');
+    }
+  }
+
+  /**
+   * Mounts the editor to a DOM container.
+   */
+  public mount(container: HTMLElement): void {
+    if (this.container) {
+      console.warn('Inkflow: Editor is already mounted.');
+      return;
+    }
+
     this.container = container;
 
     // SSR Guard: Return early if called in a non-browser environment
     if (typeof document === 'undefined' || !container) {
-      // Initialize minimal safe state
-      this.editableElement = {} as HTMLElement;
-      this.selection = {} as SelectionManager;
-      this.imageManager = {} as ImageManager;
-      this.history = {} as HistoryManager;
       return;
     }
 
+    this.initializeUI();
+  }
+
+  protected initializeUI(): void {
     // Clear container initially to prevent duplicates (especially in React Strict Mode)
     this.container.innerHTML = '';
     this.container.classList.add('te-container');
@@ -110,6 +129,47 @@ export class CoreEditor {
     this.history = new HistoryManager(this.editableElement.innerHTML);
 
     this.setupInputHandlers();
+    
+    // ... (rest of listeners)
+    this.setupEventListeners();
+
+    this.setupLimitEnforcement();
+    this.setupLinkClickHandlers();
+    this.setupImageObserver();
+    this.checkPlaceholder();
+
+    // Default structure: append editable area
+    this.container.appendChild(this.editableElement);
+
+    if (this.options.autofocus) {
+      this.focus();
+    }
+
+    if (this.options.theme) {
+      this.applyTheme(this.options.theme);
+    }
+
+    // Set default max image size if not provided
+    if (this.options.maxImageSizeMB === undefined) {
+      this.options.maxImageSizeMB = 5;
+    }
+
+    // Set default paragraph separator to <p>
+    document.execCommand('defaultParagraphSeparator', false, 'p');
+
+    // Initialize floating toolbar
+    this.floatingToolbar = new FloatingToolbar(this);
+    if (this.options.dark) {
+      this.floatingToolbar.setDarkMode(true);
+    }
+
+    // Hide loader after a short delay to ensure initial layout is stable
+    if (this.options.showLoader !== false) {
+      setTimeout(() => this.hideLoader(), 300);
+    }
+  }
+
+  private setupEventListeners(): void {
     this.addEventListener(this.editableElement, 'mousedown', (e: MouseEvent) => {
       // If clicking on the editor padding or background (not directly on an existing block)
       if (e.target === this.editableElement) {
@@ -173,41 +233,6 @@ export class CoreEditor {
         this.showCodeContextMenu(e.clientX, e.clientY, wrapper as HTMLElement);
       }
     });
-
-    this.setupLimitEnforcement();
-    this.setupLinkClickHandlers();
-    this.setupImageObserver();
-    this.checkPlaceholder();
-
-    // Default structure: append editable area
-    this.container.appendChild(this.editableElement);
-
-    if (this.options.autofocus) {
-      this.focus();
-    }
-
-    if (this.options.theme) {
-      this.applyTheme(this.options.theme);
-    }
-
-    // Set default max image size if not provided
-    if (this.options.maxImageSizeMB === undefined) {
-      this.options.maxImageSizeMB = 5;
-    }
-
-    // Set default paragraph separator to <p>
-    document.execCommand('defaultParagraphSeparator', false, 'p');
-
-    // Initialize floating toolbar
-    this.floatingToolbar = new FloatingToolbar(this);
-    if (this.options.dark) {
-      this.floatingToolbar.setDarkMode(true);
-    }
-
-    // Hide loader after a short delay to ensure initial layout is stable
-    if (this.options.showLoader !== false) {
-      setTimeout(() => this.hideLoader(), 300);
-    }
   }
 
 
@@ -763,11 +788,15 @@ export class CoreEditor {
     const el = document.createElement('div');
     el.setAttribute('contenteditable', 'true');
     el.setAttribute('role', 'textbox');
+    el.setAttribute('aria-multiline', 'true');
     el.setAttribute('spellcheck', 'false');
     el.classList.add('te-content');
 
     if (this.options.placeholder) {
       el.setAttribute('data-placeholder', this.options.placeholder);
+      el.setAttribute('aria-label', this.options.placeholder);
+    } else {
+      el.setAttribute('aria-label', 'Rich Text Editor');
     }
 
     // Default styling setup
@@ -1164,8 +1193,8 @@ export class CoreEditor {
     const td = this.getSelectedTd();
     if (td && td.parentElement) {
       const tr = td.parentElement as HTMLTableRowElement;
-      const table = tr.parentElement as HTMLTableElement;
-      if (table.rows.length > 1) {
+      const table = tr.closest('table');
+      if (table && table.rows.length > 1) {
         // QA FIX: Find a neighbor to focus BEFORE deleting
         const rowIndex = tr.rowIndex;
         const neighbor = table.rows[rowIndex + 1] || table.rows[rowIndex - 1];
@@ -1243,8 +1272,9 @@ export class CoreEditor {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
     let node = selection.anchorNode;
+    // Walk up from anchorNode to find TD or TH
     while (node && node !== this.editableElement) {
-      if (node.nodeName === 'TD') return node as HTMLTableCellElement;
+      if (node.nodeName === 'TD' || node.nodeName === 'TH') return node as HTMLTableCellElement;
       node = node.parentNode;
     }
     return null;
@@ -1553,47 +1583,18 @@ export class CoreEditor {
   public normalize(): void {
     const raw = this.editableElement.innerHTML;
 
-    // CRITICAL QA FIX: Use marker-based preservation for structural changes
-    const selection = this.selection.getRange();
-    let startMarker: HTMLElement | null = null;
-    let endMarker: HTMLElement | null = null;
-
-    if (selection && this.editableElement.contains(selection.commonAncestorContainer)) {
-      startMarker = document.createElement('span');
-      startMarker.id = 'te-selection-start';
-      startMarker.style.display = 'none';
-
-      endMarker = document.createElement('span');
-      endMarker.id = 'te-selection-end';
-      endMarker.style.display = 'none';
-
-      const startRange = selection.cloneRange();
-      startRange.collapse(true);
-      startRange.insertNode(startMarker);
-
-      const endRange = selection.cloneRange();
-      endRange.collapse(false);
-      endRange.insertNode(endMarker);
-    }
+    // Use markers for robust preservation even when DOM structure changes significantly
+    this.selection.saveSelectionMarkers(this.editableElement);
 
     const normalized = this.normalizeHTML(this.editableElement.innerHTML);
 
-    // Always apply if markers were added, or if HTML changed
-    if (normalized !== raw || startMarker) {
+    // Apply if HTML changed
+    if (normalized !== raw) {
       this.editableElement.innerHTML = normalized;
-
-      const newStart = this.editableElement.querySelector('#te-selection-start');
-      const newEnd = this.editableElement.querySelector('#te-selection-end');
-
-      if (newStart && newEnd) {
-        const range = document.createRange();
-        range.setStartAfter(newStart);
-        range.setEndBefore(newEnd);
-        this.selection.restoreSelection(range);
-      }
-
-      // Cleanup markers
-      this.editableElement.querySelectorAll('#te-selection-start, #te-selection-end').forEach(el => el.remove());
+      this.selection.restoreSelectionMarkers(this.editableElement);
+    } else {
+      // Still need to remove markers if no change
+      this.selection.removeSelectionMarkers(this.editableElement);
     }
 
     this.checkPlaceholder();

@@ -28,10 +28,14 @@ export class Toolbar {
   private createToolbarElement(): HTMLElement {
     const el = document.createElement('div');
     el.classList.add('te-toolbar');
+    el.setAttribute('role', 'toolbar');
+    el.setAttribute('aria-label', 'Editor Toolbar');
 
     // Create status container on the right
     this.statusEl = document.createElement('div');
     this.statusEl.classList.add('te-toolbar-status');
+    this.statusEl.setAttribute('aria-live', 'polite');
+    this.statusEl.setAttribute('aria-atomic', 'true');
     this.statusEl.style.marginLeft = 'auto'; // Push to right
     this.statusEl.style.display = 'flex';
     this.statusEl.style.alignItems = 'center';
@@ -113,6 +117,7 @@ export class Toolbar {
   private renderButton(item: ToolbarItem): void {
     const button = document.createElement('button');
     button.classList.add('te-button');
+    button.setAttribute('aria-label', item.title);
     // Security: item.icon is a trusted internal SVG string.
     // We insert it as HTML but ensure no user-provided strings are directly used.
     button.innerHTML = item.icon || '';
